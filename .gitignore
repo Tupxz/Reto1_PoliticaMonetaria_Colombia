@@ -1,0 +1,16 @@
+# RStudio / R
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+
+# Outputs (resultados que se regeneran)
+outputs/
+figures/
+plots/
+*.pdf
+*.png
+*.html
+
+# Mac
+.DS_Store
