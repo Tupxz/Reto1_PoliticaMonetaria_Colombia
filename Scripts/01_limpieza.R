@@ -4,3 +4,6 @@
 rm(list = ls())
 
 # código acá
+library (tidyverse)
+library (readxl)
+TRM<- read_excel("Data/TRM.xlsx")
