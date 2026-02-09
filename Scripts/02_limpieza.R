@@ -1,71 +1,46 @@
-# Reto 1 - Haciendo Macroeconomía
-# Limpieza inicial de datos
+############################################################
+# 02_cleaning.R
+# Limpieza y preprocesamiento de datos
+############################################################
 
-rm(list = ls())
-
+# Cargar paquetes
 source("scripts/01_packages.R")
 
-TRM_c<- read_excel("Datos/TRM.xlsx")
-#eliminar segunda fila poscision 1
-TRM_c<- TRM_c[-1,]
-#renombrar columnas
-colnames(TRM_c)<- c("Fecha", "TRM fin de mes", "TRM promedio")
-#convertir a formato fecha formato day/month/year y que no haya erorr en la fecha por el espacio entre el mes y el año
-TRM_c$Fecha<- as.Date(TRM_c$Fecha, format = "%d/%m/%Y")
-# eliminar datos que son "-" 
-TRM_c<- TRM_c %>% filter(`TRM fin de mes` != "-")
+############################################################
+# TRM
+############################################################
 
-# quitar puntos de miles y cambiar las comas por punto
-TRM_c$`TRM fin de mes`<- gsub("\\.", "", TRM_c$`TRM fin de mes`)
-TRM_c$`TRM fin de mes`<- gsub(",", ".", TRM_c$`TRM fin de mes`)
-TRM_c$`TRM promedio`<- gsub("\\.", "", TRM_c$`TRM promedio`)
-TRM_c$`TRM promedio`<- gsub(",", ".", TRM_c$`TRM promedio`)
-# convertir a formato numérico
-TRM_c$`TRM fin de mes`<- as.numeric(TRM_c$`TRM fin de mes`)
-TRM_c$`TRM promedio`<- as.numeric(TRM_c$`TRM promedio`)
-# ordenar por fecha
-TRM_c<- TRM_c %>% arrange(Fecha)
-#graficar TRM fin de mes
-ggplot(TRM_c, aes(x = Fecha, y = `TRM fin de mes`)) +
-  geom_line() +
-  labs(title = "TRM fin de mes", x = "Fecha", y = "TRM fin de mes") +
-  theme_minimal()
-#Graficar TRM promedio
-ggplot(TRM_c, aes(x = Fecha, y = `TRM promedio`)) +
-  geom_line() +
-  labs(title = "TRM promedio", x = "Fecha", y = "TRM promedio") +
-  theme_minimal()
+# Lectura de datos
+TRM_raw <- read_excel("Datos/TRM.xlsx")
 
-# Graficar ambas TRM en el mismo gráfico
-TRM_c_long <- TRM_c %>% 
-  pivot_longer(
-    cols = c(`TRM fin de mes`, `TRM promedio`),
-    names_to = "Tipo_TRM",
-    values_to = "Valor_TRM"
+# Eliminar fila 2 que parece metadato
+TRM_clean <- TRM_raw[-1, ]
+
+# Renombrar columnas sin espacios
+colnames(TRM_clean) <- c("Fecha", "TRM_fin_mes", "TRM_promedio")
+
+# Convertir fecha
+TRM_clean$Fecha <- as.Date(TRM_clean$Fecha, format = "%d/%m/%Y")
+
+# Eliminar filas con TRM faltante o "-"
+TRM_clean <- TRM_clean %>%
+  filter(TRM_fin_mes != "-") 
+
+# Convertir columnas a numérico usando parse_number (maneja puntos y comas)
+TRM_clean <- TRM_clean %>%
+  mutate(
+    TRM_fin_mes = readr::parse_number(TRM_fin_mes),
+    TRM_promedio = readr::parse_number(TRM_promedio)
   )
 
-ggplot(TRM_c_long, aes(x = Fecha, y = Valor_TRM, color = Tipo_TRM)) +
-  geom_line() +
-  labs(
-    title = "TRM fin de mes y TRM promedio",
-    x = "Fecha",
-    y = "Valor TRM"
-  ) +
-  scale_color_manual(
-    values = c("blue", "red"),
-    labels = c("TRM\nfin de mes", "TRM promedio")
-  ) +
-  theme_minimal() +
-  theme(legend.title = element_blank())
-# se ve que casi no hay cambios asi que se puede usar cualquiera de las dos TRM para el análisis, se usará la TRM promedio para el análisis
-# guardar el dataset limpio
-write_csv(TRM_c, "Datos/TRM_limpia.csv")
+# Ordenar por fecha
+TRM_clean <- TRM_clean %>% arrange(Fecha)
 
+# Guardar dataset limpio
+write_csv(TRM_clean, "Datos/TRM_limpia.csv")
+saveRDS(TRM_clean, "Datos/TRM_limpia.rds")
 
-
-                                       
-                                       
-                                       
-                              
-
-
+############################################################
+# Nota:
+# Visualizaciones deben ir en un script aparte (03_plots.R)
+############################################################

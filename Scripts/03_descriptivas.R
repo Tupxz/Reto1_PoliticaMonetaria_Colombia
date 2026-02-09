@@ -1,0 +1,1 @@
+# Analisis exploratorio de datos (EDA) es un proceso crucial en el análisis de datos que implica examinar, limpiar y visualizar los datos para descubrir patrones, detectar anomalías y obtener insights. Aquí hay algunos pasos comunes en el proceso de EDA:
