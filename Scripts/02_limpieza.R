@@ -3,9 +3,8 @@
 
 rm(list = ls())
 
-# código acá
-library (tidyverse)
-library (readxl)
+
+
 TRM_c<- read_excel("Datos/TRM.xlsx")
 #eliminar segunda fila poscision 1
 TRM_c<- TRM_c[-1,]
