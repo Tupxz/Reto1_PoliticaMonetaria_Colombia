@@ -3,8 +3,6 @@
 # Limpieza y preprocesamiento de datos
 ############################################################
 
-# Cargar paquetes
-source("scripts/01_packages.R")
 
 ############################################################
 # TRM
