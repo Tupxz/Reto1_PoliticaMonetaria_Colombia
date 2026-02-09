@@ -14,3 +14,13 @@ plots/
 
 # Mac
 .DS_Store
+
+# LaTeX
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
