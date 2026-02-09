@@ -113,3 +113,10 @@ El código incluido en el proyecto permite:
 ## 9. Referencias
 
 Las referencias académicas, metodológicas y de fuentes de datos se encuentran detalladas en la sección de referencias del documento escrito, siguiendo normas académicas.
+
+---
+
+## Reproducibility
+
+All results in this project can be reproduced by running the scripts
+in the `/scripts` folder in numerical order.
