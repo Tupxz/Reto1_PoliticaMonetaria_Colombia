@@ -3,7 +3,7 @@
 
 rm(list = ls())
 
-
+source("scripts/01_packages.R")
 
 TRM_c<- read_excel("Datos/TRM.xlsx")
 #eliminar segunda fila poscision 1
