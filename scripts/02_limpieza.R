@@ -5,11 +5,6 @@
 # Cargar paquetes
 source("scripts/01_packages.R")
 
-# Crear directorio de salida si no existe
-if (!dir.exists("data/processed")) {
-  dir.create("data/processed", recursive = TRUE)
-}
-
 
 # ============================================================================
 # 1. LIMPIEZA Y PROCESAMIENTO TRM
@@ -43,8 +38,8 @@ TRM_clean <- TRM_raw %>%
   arrange(Fecha)
 
 # 1.3 Validación y reporte
-cat("        ✓ Dimensiones finales:", nrow(TRM_clean), "filas x", ncol(TRM_clean), "columnas\n")
-cat("        ✓ Rango de fechas:", format(min(TRM_clean$Fecha), "%Y-%m-%d"), 
+cat("         Dimensiones finales:", nrow(TRM_clean), "filas x", ncol(TRM_clean), "columnas\n")
+cat("         Rango de fechas:", format(min(TRM_clean$Fecha), "%Y-%m-%d"), 
     "-", format(max(TRM_clean$Fecha), "%Y-%m-%d"), "\n")
 
 # 1.4 Guardado
@@ -58,3 +53,43 @@ rm(TRM_raw)
 # 2. LIMPIEZA Y PROCESAMIENTO IPC
 #    (Índice de Precios al Consumidor - variación mensual)
 # ============================================================================
+# 2. LIMPIEZA Y PROCESAMIENTO IPC
+#    (Índice de Precios al Consumidor - variación mensual)
+# ============================================================================
+ipc <- read_excel("data/raw/anex-IPC-Indices-ene2026.xlsx", sheet = "IPC")
+ipc_long <- ipc %>%
+  pivot_longer(
+    cols = -Mes,
+    names_to = "anio",
+    values_to = "ipc"
+  ) %>%
+  mutate(
+    mes_num = case_when(
+      Mes == "Enero" ~ 1,
+      Mes == "Febrero" ~ 2,
+      Mes == "Marzo" ~ 3,
+      Mes == "Abril" ~ 4,
+      Mes == "Mayo" ~ 5,
+      Mes == "Junio" ~ 6,
+      Mes == "Julio" ~ 7,
+      Mes == "Agosto" ~ 8,
+      Mes == "Septiembre" ~ 9,
+      Mes == "Octubre" ~ 10,
+      Mes == "Noviembre" ~ 11,
+      Mes == "Diciembre" ~ 12
+    ),
+    fecha = as.Date(paste(anio, mes_num, "1", sep = "-"), format = "%Y-%m-%d")
+  ) %>%
+  drop_na() %>%
+  arrange(fecha) %>%
+  dplyr::select(fecha, ipc) %>%
+  # Calcular cambio logarítmico mes vs mes del año anterior
+  mutate(
+    ipc_lag_12 = lag(ipc, 12),  # IPC del mismo mes hace 12 meses (año anterior)
+    ipc_log_cambio = log(ipc / ipc_lag_12) * 100  # Cambio en log, expresado en %
+  )
+
+# 2.1 Guardado del IPC limpio
+write_csv(ipc_long, "data/processed/IPC_limpio.csv")
+openxlsx::write.xlsx(ipc_long, "data/processed/IPC_limpio.xlsx")
+cat("        ✓ Guardado IPC en: data/processed/IPC_limpio.{csv,xlsx}\n")

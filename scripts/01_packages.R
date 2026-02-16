@@ -9,7 +9,8 @@ packages <- c(
   "lubridate",
   "vars",
   "tseries",
-  "readxl"
+  "readxl",
+  "lubridate"
 )
 
 # Identifica cuáles paquetes no están instalados
