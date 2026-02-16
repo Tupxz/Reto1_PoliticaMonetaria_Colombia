@@ -15,7 +15,7 @@ source("scripts/01_packages.R")
 source("scripts/02_limpieza.R")
 
 # Estadísticas descriptivas ---------------------------------------------
-#source("scripts/03_descriptivas.R")
+source("scripts/03_descriptivas.R")
 
 # Estimación del modelo VAR ---------------------------------------------
 #source("scripts/04_VAR.R")
