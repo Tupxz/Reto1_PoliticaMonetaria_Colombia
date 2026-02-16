@@ -10,7 +10,15 @@ packages <- c(
   "vars",
   "tseries",
   "readxl",
-  "lubridate"
+  "openxlsx",
+  "urca",
+  "dynlm",
+  "lmtest",
+  "sandwich",
+  "strucchange",
+  "strucchange",
+  "zoo",
+  "ggplot2"
 )
 
 # Identifica cuáles paquetes no están instalados

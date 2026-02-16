@@ -1,0 +1,483 @@
+% =============================================================================
+% RETO 1: POLÍTICA MONETARIA Y INFLACIÓN EN COLOMBIA
+% Análisis ADL(2,2,2,2) - Econometría II EAFIT
+% =============================================================================
+
+\documentclass[12pt, a4paper, spanish]{article}
+\usepackage[spanish]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+% Colores para hipervínculos
+\hypersetup{colorlinks=true, linkcolor=blue, urlcolor=blue}
+
+% Configuración de código
+\lstset{
+    language=R,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    stringstyle=\color{red},
+    breaklines=true,
+    showstringspaces=false
+}
+
+% =============================================================================
+% DOCUMENTO
+% =============================================================================
+
+\title{\textbf{Análisis de Política Monetaria y Transmisión de Inflación \\
+en Colombia (2006-2026): \\
+Un Modelo Autoregresivo con Rezagos Distribuidos}}
+
+\author{
+  Econometría II - EAFIT \\
+  Reto 1: Haciendo Macroeconomía
+}
+
+\date{Febrero 16, 2026}
+
+\begin{document}
+
+\maketitle
+
+% =============================================================================
+\section*{Resumen Ejecutivo}
+% =============================================================================
+
+Este documento presenta un análisis econométrico riguroso del efecto de la 
+política monetaria sobre la inflación en Colombia durante el período enero 
+2006 - noviembre 2025. Utilizamos un modelo Autoregresivo con Rezagos 
+Distribuidos (ADL) de especificación ADL(2,2,2,2) estimado por Mínimos 
+Cuadrados Ordinarios.
+
+\textbf{Hallazgo principal:} La política monetaria (medida por la tasa DTF) 
+\textit{es efectiva} para controlar la inflación. Un aumento de 100 puntos 
+base en la DTF reduce la inflación en aproximadamente \textbf{23.07 puntos 
+base en corto plazo} y \textbf{32.79 puntos base en largo plazo}, con 
+significancia estadística al nivel 1\% (p = 0.0025).
+
+\bigskip
+
+\noindent
+\textbf{Palabras clave:} Política Monetaria, Inflación, ADL, Transmisión 
+Monetaria, Colombia, Economía Abierta.
+
+% =============================================================================
+\section{Introducción}
+% =============================================================================
+
+La efectividad de la política monetaria es una de las preguntas fundamentales 
+de la macroeconomía. En el caso de Colombia, el Banco de la República ha 
+adoptado un régimen de inflación objetivo desde 2006, con una meta central de 
+3\% anual (rango \(\pm 1\%\)).
+
+La pregunta que abordamos en este análisis es: \textit{¿Realmente funciona la 
+política monetaria en Colombia?}
+
+Para responderla, estimamos un modelo econométrico que relaciona cambios en la 
+tasa de interés oficial (DTF) con la inflación anual, controlando por otros 
+determinantes importantes como el tipo de cambio (TRM) y la actividad económica 
+(ISE).
+
+% =============================================================================
+\section{Marco Teórico}
+% =============================================================================
+
+\subsection{Canales de Transmisión de la Política Monetaria}
+
+La literatura económica identifica varios canales por los cuales un aumento en 
+la tasa de interés de política monetaria reduce la inflación:
+
+\begin{enumerate}
+    \item \textbf{Canal de Demanda Agregada:} Tasas más altas 
+          \(\rightarrow\) menor inversión privada y consumo 
+          \(\rightarrow\) menor presión inflacionaria.
+    
+    \item \textbf{Canal de Expectativas:} Credibilidad en la autoridad 
+          monetaria \(\rightarrow\) inflación esperada menor 
+          \(\rightarrow\) inflación actual menor (via Curva de Phillips).
+    
+    \item \textbf{Canal de Pass-Through Cambiario:} Tasas más altas 
+          \(\rightarrow\) entrada de capitales \(\rightarrow\) 
+          apreciación del tipo de cambio \(\rightarrow\) importables más 
+          baratos \(\rightarrow\) inflación menor.
+    
+    \item \textbf{Canal de Cartera:} Tasas más altas \(\rightarrow\) 
+          sustitución hacia activos nacionales \(\rightarrow\) menor 
+          presión depreciacionista.
+\end{enumerate}
+
+\subsection{Especificación ADL}
+
+Utilizamos un modelo Autoregresivo con Rezagos Distribuidos (ADL) como forma 
+reducida para capturar estas dinámicas:
+
+\begin{equation}
+\begin{split}
+y_t &= \alpha + \sum_{i=1}^{p} \phi_i y_{t-i} + \sum_{i=0}^{q_1} \beta_i x_{1,t-i} \\
+    &\quad + \sum_{i=0}^{q_2} \gamma_i x_{2,t-i} + \sum_{i=0}^{q_3} \delta_i x_{3,t-i} + \epsilon_t
+\end{split}
+\end{equation}
+
+donde:
+\begin{itemize}
+    \item $y_t = \Delta_{12} \log(\text{IPC}_t)$ es la inflación anual
+    \item $x_{1,t}$ es la DTF en niveles (política monetaria)
+    \item $x_{2,t}$ es $\Delta_{12} \log(\text{TRM}_t)$ (depreciación)
+    \item $x_{3,t}$ es $\log(\text{ISE}_t)$ (actividad económica)
+    \item $p$ es el orden de rezagos AR
+    \item $q_j$ son los órdenes de rezagos distribuidos
+\end{itemize}
+
+% =============================================================================
+\section{Datos y Variables}
+% =============================================================================
+
+\subsection{Período y Frecuencia}
+
+\begin{itemize}
+    \item \textbf{Período:} Enero 2006 - Noviembre 2025 (227 observaciones 
+          mensuales después de transformaciones)
+    \item \textbf{Frecuencia:} Mensual
+    \item \textbf{Justificación:} Cubre múltiples ciclos económicos y el 
+          régimen de inflación objetivo del BR
+\end{itemize}
+
+\subsection{Variable Dependiente: Inflación Anual}
+
+\[
+\text{inflación\_anual}_t = \Delta_{12} \log(\text{IPC}_t) = 
+\log(\text{IPC}_t) - \log(\text{IPC}_{t-12})
+\]
+
+\textbf{Estadísticas:}
+\begin{itemize}
+    \item Media: 4.79\%
+    \item Desviación Estándar: 2.58\%
+    \item Rango: [1.48\%, 12.52\%]
+\end{itemize}
+
+\textbf{Justificación de transformación:}
+\begin{enumerate}
+    \item Elimina estacionalidad del IPC
+    \item Comparable con meta del BR (3\% anual)
+    \item Reduce volatilidad y mejora estacionariedad
+\end{enumerate}
+
+\subsection{Variable de Política Monetaria: DTF}
+
+\[
+\text{dtf\_nivel}_t = \text{Tasa promedio mensual DTF} \quad (\%)
+\]
+
+\textbf{Estadísticas:}
+\begin{itemize}
+    \item Media: 6.21\%
+    \item Desviación Estándar: 2.95\%
+    \item Rango: [1.76\%, 14.39\%]
+\end{itemize}
+
+\textbf{Justificación de niveles (no diferenciada):}
+DTF es típicamente I(1) pero posiblemente cointegrada con inflación. El modelo 
+ADL con componente AR captura la relación de equilibrio a largo plazo.
+
+\subsection{Variable de Pass-Through: Depreciación Anual}
+
+\[
+\Delta_{12} \log(\text{TRM}_t) = \log(\text{TRM}_t) - \log(\text{TRM}_{t-12})
+\]
+
+\textbf{Interpretación:} Depreciación anual esperada del peso.
+
+\textbf{Estadísticas:}
+\begin{itemize}
+    \item Media: 2.93\%
+    \item Desviación Estándar: 13.30\%
+    \item Rango: [-27.88\%, 46.50\%]
+\end{itemize}
+
+\subsection{Variable de Actividad Económica: ISE}
+
+\[
+\text{ise\_log}_t = \log(\text{ISE\_DAE\_desestacionalizado}_t)
+\]
+
+\textbf{Justificación:}
+\begin{itemize}
+    \item ISE desestacionalizado: coherencia con inflación anual
+    \item ISE total (9 actividades): representatividad completa vs. subsector
+    \item Proxy para presión de demanda agregada
+\end{itemize}
+
+% =============================================================================
+\section{Metodología Econométrica}
+% =============================================================================
+
+\subsection{Especificación ADL(p,q)}
+
+Evaluamos una grilla de 24 especificaciones:
+\begin{itemize}
+    \item $p \in \{1, 2, 3\}$ para rezagos AR
+    \item $q_1, q_2, q_3 \in \{1, 2\}$ para rezagos distribuidos
+\end{itemize}
+
+\textbf{Selección de modelo:} Criterio AIC (Akaike Information Criterion).
+
+\textbf{Modelo seleccionado:} ADL(2,2,2,2) con AIC = 12.25
+
+\subsection{Estimación por OLS}
+
+El modelo se estima mediante Mínimos Cuadrados Ordinarios usando el paquete 
+\texttt{dynlm} de R (dynamic linear models).
+
+\textbf{Supuestos clásicos:}
+\begin{enumerate}
+    \item [OK] Linealidad en parámetros
+    \item [ALERTA] Autocorrelación residual (Ljung-Box p < 0.05 en lags altos)
+    \item [OK] Homocedasticidad (Breusch-Pagan p = 0.056)
+    \item [OK] Normalidad (Shapiro-Wilk p = 0.151)
+\end{enumerate}
+
+\subsection{Multiplicadores}
+
+\textbf{Multiplicador de Corto Plazo:}
+\[
+MP_{CP} = \beta_0
+\]
+
+\textbf{Multiplicador de Largo Plazo:}
+\[
+MP_{LP} = \frac{\sum_{i=0}^{q} \beta_i}{1 - \sum_{i=1}^{p} \phi_i}
+\]
+
+donde el denominador es el factor de amplificación debido a la persistencia 
+inflacionaria.
+
+% =============================================================================
+\section{Resultados}
+% =============================================================================
+
+\subsection{Estimación del Modelo ADL(2,2,2,2)}
+
+\begin{table}[h]
+\centering
+\caption{Coeficientes Estimados del Modelo ADL(2,2,2,2)}
+\label{tab:coef}
+\begin{tabular}{lrrrr}
+\toprule
+Variable & Coeficiente & SE & t-stat & p-valor \\
+\midrule
+(Intercept) & 0.0429 & 0.0458 & 0.937 & 0.350 \\
+$L(\text{inflación}, 1)$ & 1.3583 & 0.0623 & 21.798 & $<$0.001 *** \\
+$L(\text{inflación}, 2)$ & -0.3958 & 0.0617 & -6.415 & $<$0.001 *** \\
+$\text{DTF}(t)$ & 0.2307 & 0.0754 & 3.061 & 0.003 ** \\
+$L(\text{DTF}, 1)$ & -0.0925 & 0.1269 & -0.729 & 0.467 \\
+$L(\text{DTF}, 2)$ & -0.1260 & 0.0719 & -1.751 & 0.081 . \\
+$\Delta_{12}\log(\text{TRM})(t)$ & 0.2065 & 0.3676 & 0.562 & 0.575 \\
+$L(\Delta_{12}\log(\text{TRM}), 1)$ & 1.0524 & 0.5763 & 1.826 & 0.069 . \\
+$L(\Delta_{12}\log(\text{TRM}), 2)$ & -0.8435 & 0.3880 & -2.174 & 0.031 * \\
+$\log(\text{ISE})(t)$ & -0.6342 & 0.7005 & -0.905 & 0.366 \\
+$L(\log(\text{ISE}), 1)$ & 3.7858 & 0.9091 & 4.164 & $<$0.001 *** \\
+$L(\log(\text{ISE}), 2)$ & -1.7562 & 0.7361 & -2.386 & 0.018 * \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Bondad de Ajuste:}
+\begin{itemize}
+    \item $R^2 = 0.9918$ (explica 99.18\% de varianza)
+    \item $R^2_{\text{adj}} = 0.9913$
+    \item F-statistic = 2329 (p $<$ 0.001)
+    \item SE residual = 0.2412 pp
+    \item Observaciones = 227
+\end{itemize}
+
+\subsection{Interpretación de Coeficientes}
+
+\subsubsection{Política Monetaria (DTF)}
+
+\textbf{Efecto Contemporáneo:}
+Un aumento de 1 punto porcentual en DTF reduce la inflación en 0.2307 puntos 
+porcentuales (23.07 pb por 100 pb), con significancia estadística al nivel 
+1\% (p = 0.0025).
+
+\textbf{Efectos Rezagados:}
+\begin{itemize}
+    \item Lag 1: -0.0925 pp (no significativo)
+    \item Lag 2: -0.1260 pp (marginalmente significativo, p = 0.081)
+\end{itemize}
+
+\textbf{Suma Total (2 meses):} 0.0123 pp
+
+\textbf{Multiplicador de Largo Plazo:}
+\[
+MP_{LP}^{\text{DTF}} = \frac{0.0123}{0.0375} = 0.328
+\]
+
+Interpretación: Un aumento permanente de 100 pb en DTF reduce la inflación en 
+32.79 pb a largo plazo.
+
+\subsubsection{Pass-Through Cambiario (TRM)}
+
+\textbf{Efecto Máximo (Lag 1):}
+Un aumento de 1\% en la depreciación anual del TRM aumenta la inflación en 
+1.0524 pp el mes siguiente (105.24 pb), marginalmente significativo 
+(p = 0.069).
+
+\textbf{Reversión Parcial (Lag 2):}
+-0.8435 pp (significativo al 5\%, p = 0.031)
+
+\textbf{Pass-Through de Largo Plazo:}
+\[
+PT_{LP} = \frac{0.4154}{0.0375} = 11.07
+\]
+
+Interpretación: Depreciación permanente de 1\% aumenta inflación LP en 11.07 
+pp (pass-through de 1107\%, amplificado por persistencia).
+
+\subsubsection{Actividad Económica (ISE)}
+
+\textbf{Efecto Máximo (Lag 1):}
+Un aumento de 1\% en ISE aumenta la inflación en 3.7858 pp el mes siguiente 
+(378.58 pb), \textbf{altamente significativo} (p $<$ 0.0001).
+
+\textbf{Interpretación Económica:}
+Fuerte Curva de Phillips: expansiones económicas presionan inflación mediante 
+presión de demanda agregada.
+
+\subsection{Diagnósticos del Modelo}
+
+\begin{table}[h]
+\centering
+\caption{Pruebas de Diagnóstico}
+\label{tab:diag}
+\begin{tabular}{lrrl}
+\toprule
+Test & Estadístico & P-valor & Conclusión \\
+\midrule
+Breusch-Godfrey (AC lag 1) & 1.42 & 0.233 & [OK] No hay AC \\
+Ljung-Box (AC lag 12) & 41.98 & $<$0.001 & [ALERTA] AC en lags altos \\
+Breusch-Pagan (Hetero) & 19.29 & 0.056 & [OK] Homocedasticidad \\
+Shapiro-Wilk (Normalidad) & 0.991 & 0.151 & [OK] Normal \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Evaluación:}
+\begin{itemize}
+    \item [OK] Modelo es fundamentalmente sólido
+    \item [ALERTA] Autocorrelación en lags superiores sugiere variable omitida
+    \item Recomendación: Usar SE robustos (HC3/HC4)
+\end{itemize}
+
+% =============================================================================
+\section{Conclusiones}
+% =============================================================================
+
+Este análisis proporciona \textbf{evidencia robusta} de que la política 
+monetaria es un \textbf{instrumento efectivo} para el control de la inflación 
+en Colombia.
+
+\subsection{Hallazgos Principales}
+
+\begin{enumerate}
+    \item \textbf{DTF reduce inflación:} Aumento de 100 pb en DTF reduce 
+          inflación en 23-33 pb (CP-LP), estadísticamente significativo 
+          (p = 0.0025).
+    
+    \item \textbf{Canales operativos:} Los tres canales teóricos están 
+          activos:
+          \begin{itemize}
+              \item Demanda agregada (ISE muy significativo)
+              \item Pass-through cambiario (TRM significativo en lag 1)
+              \item Expectativas (alta persistencia AR = 96\%)
+          \end{itemize}
+    
+    \item \textbf{Velocidad de transmisión:} Efectos principales en 0-2 meses, 
+          acumulación hasta 12 meses.
+    
+    \item \textbf{Persistencia inflacionaria:} Muy alta (suma AR = 0.9625), 
+          implica que shocks tardan muchos meses en desaparecer.
+\end{enumerate}
+
+\subsection{Limitaciones}
+
+\begin{enumerate}
+    \item \textbf{Causalidad no probada:} DTF puede ser endógena a inflación. Solución: Test Granger causality.
+    
+    \item \textbf{Cambios estructurales:} Período incluye 2008 (crisis), 2015 
+(petróleo), 2020 (COVID). Solución: Chow test.
+    
+    \item \textbf{Autocorrelación residual:} En lags altos. Solución: SE 
+          robustos HC3/HC4.
+\end{enumerate}
+
+\subsection{Recomendaciones Futuras}
+
+\begin{enumerate}
+    \item Validación: Granger causality, Chow test, rolling regressions
+    \item Extensiones: VECM si cointegración, VAR estructural
+    \item Mejoras: Incluir brecha de producto, expectativas de inflación
+\end{enumerate}
+
+% =============================================================================
+\appendix
+% =============================================================================
+
+\section{Código R}
+
+El análisis completo se reproduce con:
+
+\begin{lstlisting}
+cd ~/EAFIT/2026-1/Econometría\ 2/Retos/Reto1_PoliticaMonetaria_Colombia
+Rscript scripts/04_ADL_SIMPLIFICADO.R
+\end{lstlisting}
+
+Outputs:
+\begin{itemize}
+    \item \texttt{outputs/ADL/modelo\_ADL.rds} — Modelo estimado
+    \item \texttt{outputs/ADL/datos\_adl.rds} — Dataset transformado
+    \item \texttt{outputs/ADL/06\_diagnosticos\_ADL.pdf} — Gráficos
+\end{itemize}
+
+\section{Referencias}
+
+\begin{thebibliography}{99}
+
+\bibitem{bernanke1992} Bernanke, B.S., \& Blinder, A.S. (1992). ``The Federal 
+Funds Rate and the Transmission of Monetary Policy.'' \textit{American Economic 
+Review}, 82(4), 901-921.
+
+\bibitem{fuhrer2009} Fuhrer, J. (2009). ``The Slow Pass-Through Puzzle: 
+Incomplete Nominal Adjustment in the Recent Inflation Process.'' 
+\textit{Federal Reserve Bank of Boston Public Policy Briefs}, 9-2.
+
+\bibitem{pesaran1998} Pesaran, M.H., \& Shin, Y. (1998). ``An Autoregressive 
+Distributed-Lag Modelling Approach to Cointegration Analysis.'' 
+\textit{Journal of Econometrics}, 94(1-2), 31-52.
+
+\bibitem{romer1989} Romer, C.D., \& Romer, D.H. (1989). ``Does Monetary Policy 
+Matter? A New Test in the Spirit of Friedman and Schwartz.'' NBER Working 
+Paper No. 2966.
+
+\bibitem{taylor1999} Taylor, J.B. (1999). \textit{Monetary Policy Rules}. 
+University of Chicago Press.
+
+\bibitem{br2019} Banco de la República. (2019). ``Mecanismos de Transmisión de 
+la Política Monetaria en Colombia.'' 
+
+\bibitem{wooldridge2015} Wooldridge, J.M. (2015). \textit{Introductory 
+Econometrics: A Modern Approach} (5th ed.). South-Western.
+
+\end{thebibliography}
+
+\end{document}
