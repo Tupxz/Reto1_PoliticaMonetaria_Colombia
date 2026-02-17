@@ -35,7 +35,12 @@ TRM_clean <- TRM_raw %>%
     TRM_promedio = as.numeric(gsub(",", ".", gsub("\\.", "", TRM_promedio)))
   ) %>%
   drop_na(TRM_fin_mes) %>%
-  arrange(Fecha)
+  arrange(Fecha) %>%
+  mutate(
+    # Calcular cambio logarítmico mes vs mes del año anterior (12 meses)
+    TRM_promedio_lag_12 = lag(TRM_promedio, 12),  # TRM promedio del mismo mes hace 12 meses
+    TRM_log = log(TRM_promedio / TRM_promedio_lag_12) * 100  # Cambio en log, expresado en %
+  )
 
 # 1.3 Validación y reporte
 cat("         Dimensiones finales:", nrow(TRM_clean), "filas x", ncol(TRM_clean), "columnas\n")

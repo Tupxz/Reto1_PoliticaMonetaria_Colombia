@@ -1,0 +1,225 @@
+\documentclass[12pt, oneside]{article}
+\usepackage[spanish]{babel}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{setspace}
+\usepackage{float}
+\usepackage{array}
+
+\geometry{margin=1in}
+\setstretch{1.5}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\small Transmision de Politica Monetaria}
+\lhead{\small Colombia 2006-2025}
+\cfoot{\thepage}
+
+\title{\Large \textbf{Transmision de la Politica Monetaria a la Inflacion en Colombia}\\
+       \normalsize Un Analisis Econometrico mediante Modelos ADL (2006-2025)}
+\author{Econometria II - Reto 1: Haciendo Macroeconomia}
+\date{Febrero 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Este documento presenta un analisis econometrico comprensivo de los mecanismos de transmision de la politica monetaria hacia la inflacion en Colombia durante el periodo 2006-2025. Utilizando un modelo autoregresivo de rezagos distribuidos ---ADL(1,1,1,1)---, estimado por minimos cuadrados ordinarios, se investigan tres canales principales: (1) el efecto directo de las tasas de interes de politica (DTF), (2) el pass-through cambiario a traves del tipo de cambio (TRM), y (3) el efecto de la actividad economica (ISE). Los resultados revelan que la politica monetaria del Banco de la Republica es \textbf{efectiva} para controlar la inflacion, con efectos que se despliegan gradualmente en el tiempo segun una distribucion Koyck. La \textbf{mediana de rezagos} es de aproximadamente 24.1 meses, indicando una transmision moderada-lenta, mientras que la \textbf{media de rezagos} de 34.3 meses refleja la duracion promedio del efecto completo. Estos hallazgos tienen importantes implicaciones de politica economica para el Banco de la Republica.
+\end{abstract}
+
+\newpage
+\tableofcontents
+\newpage
+
+\section{Introduccion}
+
+La comprension de los mecanismos de transmision de la politica monetaria constituye un pilar fundamental para el analisis macroeconomico contemporaneo. El Banco de la Republica, como autoridad monetaria en Colombia, enfrenta el desafio permanente de mantener la estabilidad de precios dentro de su rango meta (2\% -- 4\%), utilizando principalmente como instrumento la Tasa de Politica Monetaria (TPM), que se refleja en indicadores como la DTF (Depositos a Termino Fijo).
+
+Sin embargo, la ruta desde la decision de politica hasta el efecto final en la inflacion no es directa ni inmediata. Existe un \textbf{periodo de transmision} durante el cual la politica monetaria despliega sus efectos a traves de multiples canales:
+
+\begin{enumerate}
+    \item \textbf{Canal de demanda agregada:} Cambios en las tasas de interes afectan el costo del credito, modificando la inversion y el consumo.
+    \item \textbf{Canal del tipo de cambio (pass-through cambiario):} Cambios en tasas domesticas afectan el tipo de cambio, que repercute en precios de bienes transables.
+    \item \textbf{Canal de expectativas:} Anuncios y acciones de politica afectan las expectativas inflacionarias de agentes.
+\end{enumerate}
+
+Este documento adopta un enfoque econometrico basado en modelos \textbf{ADL} (Autoregressive Distributed Lag) para cuantificar estas dinamicas en datos mensuales colombianos de 2006 a 2025. El analisis responde preguntas clave para la formulacion de politica:
+
+\begin{itemize}
+    \item Que tan efectiva es la politica monetaria para controlar la inflacion?
+    \item Cual es el \textbf{tiempo de transmision} caracteristico?
+    \item Que magnitud tienen los efectos de corto plazo vs. largo plazo?
+    \item Cual es la importancia relativa de cada canal de transmision?
+\end{itemize}
+
+\section{Marco Metodologico}
+
+\subsection{Especificacion del Modelo}
+
+Empleamos un modelo ADL de especificacion $(1,1,1,1)$ que relaciona la inflacion anual con sus determinantes dinamicos:
+
+\begin{equation}
+\begin{split}
+\text{Inf}_t = \alpha + \lambda \text{Inf}_{t-1} + &\beta_{0}^{DTF} \text{DTF}_{t} + \beta_{1}^{DTF} \text{DTF}_{t-1}\\
+&+ \beta_{0}^{TRM} \Delta_{12}\ln(\text{TRM})_{t} + \beta_{1}^{TRM} \Delta_{12}\ln(\text{TRM})_{t-1}\\
+&+ \beta_{0}^{ISE} \text{ISE}_{t} + \beta_{1}^{ISE} \text{ISE}_{t-1} + \epsilon_t
+\end{split}
+\label{eq:adl}
+\end{equation}
+
+\subsection{Variables del Modelo}
+
+\begin{itemize}
+    \item $\text{Inf}_t$: Inflacion anual (cambio porcentual del IPC)
+    \item $\text{DTF}_t$: Tasa de depositos a termino fijo (proxy de tasa de politica)
+    \item $\Delta_{12}\ln(\text{TRM})_t$: Cambio logaritmico anual del tipo de cambio
+    \item $\text{ISE}_t$: Indice de Seguimiento a la Economia (proxy de actividad)
+    \item $\lambda$: Parametro de persistencia inflacionaria
+    \item $\epsilon_t$: Termino de error
+\end{itemize}
+
+\subsection{Periodo de Estimacion}
+
+\begin{itemize}
+    \item \textbf{Periodo}: Enero 2006 -- Enero 2025 (228 observaciones mensuales)
+    \item \textbf{Metodo}: Minimos Cuadrados Ordinarios (MCO)
+    \item \textbf{R² estimado}: 0.9892 | R² Ajustado: 0.9889
+\end{itemize}
+
+\section{Resultados Principales de la Estimacion}
+
+\subsection{Coeficientes Estimados}
+
+El modelo ADL(1,1,1,1) arroja los siguientes coeficientes:
+
+\begin{equation}
+\begin{split}
+\widehat{\text{Inf}}_t = &\, 0.0238 + 0.9762 \text{Inf}_{t-1}\\
+&+ 0.4336 \text{DTF}_{t} - 0.4372 \text{DTF}_{t-1}\\
+&+ 0.0040 \Delta_{12}\ln(\text{TRM})_{t} + 0.0028 \Delta_{12}\ln(\text{TRM})_{t-1}\\
+&- 0.4873 \text{ISE}_{t} + 3.1066 \text{ISE}_{t-1}
+\end{split}
+\end{equation}
+
+\subsection{Hallazgo Central: Persistencia Inflacionaria Muy Alta}
+
+El coeficiente AR(1) estimado de $\lambda = 0.9762$ es \textbf{extremadamente alto}, indicando que el 97.6\% de la inflacion de este mes es inercia del mes anterior. Esto tiene profundas implicaciones econometricas y economicas:
+
+\begin{itemize}
+    \item \textbf{Econometricamente}: Este parametro cercano a 1 genera una distribucion Koyck muy lenta de los efectos de los shocks.
+    \item \textbf{Economicamente}: La inflacion en Colombia es \textbf{extraordinariamente pegajosa}. Posibles causas: indexacion salarial, contratos de largo plazo, expectativas inflacionarias ancladas en rangos meta pasados.
+\end{itemize}
+
+\section{Analisis Dinamico: Media y Mediana de Rezagos}
+
+\subsection{Importancia Conceptual}
+
+Con $\lambda = 0.9762$, los efectos de los shocks de politica se distribuyen segun una distribucion geometrica (Koyck). Dos metricas sintetizan esta distribucion:
+
+\begin{enumerate}
+    \item \textbf{Mediana de rezagos}: Tiempo en alcanzar el 50\% del efecto final
+    \item \textbf{Media de rezagos}: Duracion promedio ponderada del efecto completo
+\end{enumerate}
+
+\subsection{Calculo de la Mediana de Rezagos}
+
+La formula es:
+\begin{equation}
+\text{Mediana} = \frac{\ln(2)}{-\ln(\lambda)} = \frac{0.6931}{-\ln(0.9717)} = \frac{0.6931}{0.0288} = 24.13 \text{ meses}
+\end{equation}
+
+\textbf{Interpretacion}: Un shock de politica monetaria en el mes $t$ tendra su 50\% de efecto total alrededor de 2 anios despues (mes $t+24$). El efecto es \textbf{moderadamente lento} en comparacion con economias desarrolladas (12-18 meses), pero refleja la alta persistencia de la inflacion colombiana.
+
+\subsection{Calculo de la Media de Rezagos}
+
+La formula es:
+\begin{equation}
+\text{Media} = \frac{\lambda}{1-\lambda} = \frac{0.9717}{0.0283} = 34.32 \text{ meses}
+\end{equation}
+
+\textbf{Interpretacion}: El efecto promedio se despliega durante 34.32 meses, aproximadamente 2 anios y 10 meses. Esto es considerablemente largo, reflejando la inercia inflacionaria persistente en Colombia. Los agentes economicos mantienen expectativas inflacionarias elevadas que se trasmiten lentamente.
+
+\subsection{Tiempo para 95\% de Disipacion}
+
+\begin{equation}
+t_{95\%} = \frac{\ln(0.05)}{-\ln(\lambda)} = \frac{-2.996}{0.0288} = 104.30 \text{ meses}
+\end{equation}
+
+Despues de aproximadamente 8.7 anios, el 95\% del efecto inicial se ha disipado. Esto subraya que los cambios de politica monetaria tienen efectos extraordinariamente persistentes en la economia colombiana.
+
+\subsection{Clasificacion e Implicaciones}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Metrica} & \textbf{Valor / Interpretacion} \\
+\midrule
+Mediana & 28.7 meses $\Rightarrow$ Transmision LENTA \\
+Media & 40.9 meses $\Rightarrow$ Duracion PROLONGADA \\
+95\% disiparse & 124.1 meses $\Rightarrow$ Efectos MUY PERSISTENTES \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Conclusion}: La transmision de politica monetaria en Colombia es \textbf{lenta y prolongada}. Los formuladores de politica deben esperar varios anios para ver los efectos completos de sus decisiones.
+
+\section{Multiplicadores de Largo Plazo}
+
+Con factor amplificador $1/(1-\lambda) = 41.94$:
+
+\begin{itemize}
+    \item \textbf{DTF}: Multiplicador LP = $-0.151$ (100 pb en tasa reduce inflacion 15.1 pp)
+    \item \textbf{TRM}: Multiplicador LP = $0.284$ (1\% depreciacion aumenta inflacion 28.4 pb)
+    \item \textbf{ISE}: Multiplicador LP = $109.85$ (elasticidad muy alta)
+\end{itemize}
+
+La politica monetaria \textbf{es efectiva}, pero los efectos toman tiempo en manifestarse.
+
+\section{Diagnosticos}
+
+\begin{itemize}
+    \item \textbf{R²}: 0.9892 - Excelente ajuste
+    \item \textbf{Autocorrelacion}: Presente (p = 0.0000)
+    \item \textbf{Heterocedasticidad}: Presente (p = 0.0156)
+    \item \textbf{Normalidad}: Cumplida (p = 0.1093)
+\end{itemize}
+
+\section{Proyeccion Febrero 2026}
+
+Basado en el modelo ADL estimado, se realizan proyecciones iterativas de tres meses (Dic 2025 - Feb 2026) bajo supuesto base donde las variables exogenas se mantienen en sus niveles de noviembre 2025:
+
+\begin{itemize}
+    \item \textbf{Noviembre 2025 (Observado)}: 5.1685\%
+    \item \textbf{Diciembre 2025 (Proyectado)}: 5.0228\%
+    \item \textbf{Enero 2026 (Proyectado)}: 4.8812\%
+    \item \textbf{Febrero 2026 (Proyectado)}: 4.7437\%
+\end{itemize}
+
+\textbf{Cambio total (3 meses)}: -42.48 puntos base
+
+La proyeccion sugiere una \textbf{disminucion significativa} de la inflacion durante los proximos tres meses, aproximandose al limite inferior del rango meta del Banco de la Republica (2\% - 4\%).
+
+\section{Conclusiones}
+
+\begin{enumerate}
+    \item La politica monetaria del Banco de la Republica \textbf{es efectiva} para controlar inflacion
+    \item Los efectos se distribuyen lentamente: mediana de 28.7 meses, media de 40.9 meses
+    \item La inflacion en Colombia exhibe persistencia extraordinaria ($\lambda = 0.9762$)
+    \item El pass-through cambiario es moderado pero relevante (28.4 pb por 1\% depreciacion)
+    \item Recomendacion: Adoptar horizonte de mediano-largo plazo (3-4 anios) para evaluacion de politica
+\end{enumerate}
+
+\appendix
+
+\section{Especificacion Tecnica Completa}
+
+Modelo ADL(1,1,1,1) estimado por OLS con 229 observaciones, periodo 2006M2 a 2025M1.
+
+\end{document}
