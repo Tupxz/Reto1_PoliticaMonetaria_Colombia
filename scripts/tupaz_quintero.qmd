@@ -1,0 +1,48 @@
+---
+title: "Análisis Econométrico"
+author: "Tu Nombre"
+date: "`r Sys.Date()`"
+format: 
+  pdf:
+    toc: true
+    number-sections: true
+  html:
+    toc: true
+    code-fold: true
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+## Introducción
+
+Este es un documento Quarto para análisis econométrico.
+
+## Carga de datos y librerías
+
+```{r}
+#| label: setup
+#| echo: true
+
+# Cargar librerías
+library(tidyverse)
+library(readxl)
+
+# Verificar directorio
+cat("Directorio actual:", getwd(), "\n")
+```
+
+## Análisis exploratorio
+
+```{r}
+#| label: eda
+#| echo: true
+
+# Aquí va tu código R
+print("Listo para comenzar")
+```
+
+## Conclusiones
+
+Sección de conclusiones aquí.
