@@ -16,7 +16,7 @@ packages <- c(
   "lmtest",
   "sandwich",
   "strucchange",
-  "strucchange",
+  "fpp3",
   "zoo",
   "ggplot2"
 )

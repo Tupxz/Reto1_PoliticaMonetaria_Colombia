@@ -18,7 +18,7 @@ source("scripts/02_limpieza.R")
 source("scripts/03_descriptivas.R")
 
 # Estimación del modelo VAR ---------------------------------------------
-source("scripts/ADL.R")
+source("scripts/04_ADL.R")
 
 # Predicciones ----------------------------------------------------------
 #source("scripts/05_predicciones.R")

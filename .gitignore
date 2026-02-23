@@ -19,3 +19,7 @@
 *.fls
 *.fdb_latexmk
 *.gz
+#python
+*.pyc
+__pycache__/
+*.venv

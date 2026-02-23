@@ -1,0 +1,164 @@
+---
+title: ""
+format: 
+  html:
+    embed-resources: true
+editor: visual
+execute:
+  echo: true
+  warning: false
+  message: false
+editor_options: 
+  chunk_output_type: inline
+---
+
+<br><br><br>
+
+::: {style="text-align: center;"}
+# **Transmisión dinámica de la política monetaria y factores macroeconómicos sobre la inflación en Colombia: un enfoque VAR (quarto)**
+
+<br><br>
+
+### Santiago Tupaz
+
+### Moisés Quintero
+
+<br><br>
+
+**Profesor:** Gustavo García\
+**Universidad:** Universidad EAFIT\
+**Curso:** Econometría II
+
+<br>
+
+**Fecha de entrega:** 26 de febrero de 2026
+:::
+
+<br><br><br>
+
+## 1. Librerias
+
+```{r}
+#| label: Librerias
+#| message: false
+#| warning: false
+#| include: false
+packages <- c(
+  "tidyverse",
+  "lubridate",
+  "vars",
+  "tseries",
+  "readxl",
+  "openxlsx",
+  "urca",
+  "dynlm",
+  "lmtest",
+  "sandwich",
+  "strucchange",
+  "fpp3",
+  "zoo",
+  "ggplot2",
+  "forecast"
+)
+
+# Identifica cuáles paquetes no están instalados
+not_installed <- packages[!(packages %in% rownames(installed.packages()))]
+
+# Instala solo los que faltan
+if(length(not_installed)) {
+  install.packages(not_installed)
+}
+
+# Carga todos los paquetes
+invisible(lapply(packages, library, character.only = TRUE))
+```
+
+Para el desarrollo del análisis econométrico se emplean diversas librerías especializadas en manipulación de datos, series de tiempo y estimación de modelos dinámicos multivariados. A continuación, se describe el propósito de cada grupo de paquetes:
+
+Las librerías **`tidyverse`** y **`ggplot2`** se utilizan para la manipulación, limpieza y visualización de datos. Estas herramientas permiten estructurar bases de datos de manera eficiente, transformar variables y generar gráficos descriptivos claros que facilitan el análisis exploratorio previo a la modelación.
+
+El paquete **`lubridate`** se emplea para el manejo adecuado de fechas y formatos temporales, lo cual es fundamental en el tratamiento de series de tiempo macroeconómicas.
+
+Para la estimación y análisis del modelo VAR se utilizan principalmente **`vars`**, que permite estimar modelos autorregresivos vectoriales, generar funciones impulso-respuesta (IRF) y descomposiciones de varianza, y **`urca`** y **`tseries`**, que se emplean para realizar pruebas de raíz unitaria (ADF, Phillips-Perron) y cointegración, garantizando el tratamiento adecuado de la estacionariedad.
+
+La librería **`dynlm`** se utiliza para estimar modelos dinámicos mediante mínimos cuadrados incorporando rezagos explícitos, mientras que **`lmtest`** y **`sandwich`** permiten realizar pruebas de diagnóstico (autocorrelación, heterocedasticidad, estabilidad) y obtener errores estándar robustos.
+
+El paquete **`strucchange`** se emplea para analizar posibles cambios estructurales en las series, elemento particularmente relevante en el estudio de política monetaria y choques macroeconómicos.
+
+Para análisis y modelación complementaria de series de tiempo se utilizan **`forecast`**, **`fpp3`** y **`zoo`**, que facilitan el manejo de estructuras temporales, pronósticos y transformaciones específicas de datos indexados en el tiempo.
+
+Finalmente, **`readxl`** y **`openxlsx`** se emplean para la importación y exportación de datos en formato Excel, asegurando reproducibilidad y compatibilidad con fuentes externas.
+
+En conjunto, estas librerías permiten construir un entorno reproducible y robusto para el análisis de política monetaria mediante técnicas modernas de econometría de series de tiempo.
+
+## 2. Limpieza de bases de datos
+
+## 2.1 Tasa Representativa del Mercado (TRM)
+
+```{r}
+#| label: TRM
+#| warning: true
+#| include: false
+# ============================================================================
+# 1. Procesamiento de la TRM
+#    (Tasa Representativa del Mercado - datos diarios)
+# ============================================================================
+
+# 1.1 Lectura de datos
+TRM_raw <- read_excel("../data/raw/TRM.xlsx")
+
+# 1.2 Limpieza y transformación
+TRM_clean <- TRM_raw %>%
+  slice(-1) %>%  # Eliminación de fila de metadatos
+  rename(
+    Fecha = names(.)[1],
+    TRM_fin_mes = names(.)[2],
+    TRM_promedio = names(.)[3]
+  ) %>%
+  mutate(
+    Fecha = as.Date(Fecha, format = "%d/%m/%Y"),
+    TRM_fin_mes = as.numeric(gsub(",", ".", gsub("\\.", "", TRM_fin_mes))),
+    TRM_promedio = as.numeric(gsub(",", ".", gsub("\\.", "", TRM_promedio)))
+  ) %>%
+  drop_na(TRM_promedio) %>%
+  arrange(Fecha) %>%
+  mutate(
+    TRM_promedio_lag_12 = lag(TRM_promedio, 12),
+    TRM_log = log(TRM_promedio / TRM_promedio_lag_12) * 100
+  ) %>%
+  dplyr::select(Fecha, TRM_promedio, TRM_log)
+
+# 1.3 Almacenamiento
+write_csv(TRM_clean, "../data/processed/TRM_limpia.csv")
+saveRDS(TRM_clean, "../data/processed/TRM_limpia.rds")
+
+rm(TRM_raw)
+```
+
+La Tasa Representativa del Mercado (TRM) se incorpora en el modelo como una variable fundamental para capturar los efectos del canal cambiario sobre la dinámica inflacionaria en Colombia. Dado que la economía colombiana es abierta y presenta una alta dependencia de bienes importados, las variaciones en el tipo de cambio afectan directamente los precios internos a través del mecanismo de pass-through cambiario.
+
+En particular, una depreciación del peso colombiano encarece los bienes importados y los insumos intermedios, lo cual puede trasladarse a los precios al consumidor. Por esta razón, la TRM constituye un determinante relevante dentro del sistema VAR, permitiendo evaluar la transmisión de choques externos hacia la inflación doméstica.
+
+### Transformación de la variable
+
+La TRM se transforma utilizando la diferencia logarítmica a 12 meses:
+
+$$
+\Delta_{12} \log(\text{TRM}_t)=\log\left(\frac{\text{TRM}_t}{\text{TRM}_{t-12}}\right)\times 100
+$$
+
+Esta transformación responde a tres razones principales:
+
+1.  **Interpretación económica:** La diferencia logarítmica permite aproximar la variación porcentual anual del tipo de cambio, lo que facilita la interpretación económica de los coeficientes.
+
+2.  **Consistencia temporal:** Dado que la inflación suele analizarse en términos anuales, utilizar una variación interanual de la TRM mantiene coherencia en el horizonte temporal.
+
+3.  **Estacionariedad:** Las series en niveles suelen presentar tendencia o comportamiento no estacionario. Tomar logaritmos y diferencias ayuda a estabilizar la media y la varianza, condición necesaria para la estimación válida de modelos VAR.
+
+En consecuencia, la variable `TRM_log` representa la tasa de depreciación (o apreciación) anual del tipo de cambio nominal, expresada en términos porcentuales.
+
+### 2.2 Índice de Precios al Consumidor (IPC)
+
+```{r}
+
+```
