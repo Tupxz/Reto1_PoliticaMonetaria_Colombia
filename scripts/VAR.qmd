@@ -93,7 +93,7 @@ En conjunto, estas librerías permiten construir un entorno reproducible y robus
 
 ## 2. Limpieza de bases de datos
 
-## 2.1 Tasa Representativa del Mercado (TRM)
+### 2.1 Tasa Representativa del Mercado (TRM)
 
 ```{r}
 #| label: TRM
@@ -139,7 +139,7 @@ La Tasa Representativa del Mercado (TRM) se incorpora en el modelo como una vari
 
 En particular, una depreciación del peso colombiano encarece los bienes importados y los insumos intermedios, lo cual puede trasladarse a los precios al consumidor. Por esta razón, la TRM constituye un determinante relevante dentro del sistema VAR, permitiendo evaluar la transmisión de choques externos hacia la inflación doméstica.
 
-### Transformación de la variable
+### 2.1.1 Transformación de la variable
 
 La TRM se transforma utilizando la diferencia logarítmica a 12 meses:
 
@@ -160,5 +160,170 @@ En consecuencia, la variable `TRM_log` representa la tasa de depreciación (o ap
 ### 2.2 Índice de Precios al Consumidor (IPC)
 
 ```{r}
+#| include: false
+# ============================================================================
+# 2. LIMPIEZA Y PROCESAMIENTO DEL IPC
+#    (Índice de Precios al Consumidor - Serie mensual)
+# ============================================================================
+
+# 2.1 Lectura de datos
+ipc_raw <- read_excel(
+  "../data/raw/anex-IPC-Indices-ene2026.xlsx",
+  sheet = "IPC"
+)
+
+# 2.2 Reestructuración y construcción de serie temporal
+ipc_clean <- ipc_raw %>%
+  pivot_longer(
+    cols = -Mes,
+    names_to = "anio",
+    values_to = "ipc"
+  ) %>%
+  mutate(
+    anio = as.numeric(anio),
+    mes_num = match(
+      Mes,
+      c("Enero","Febrero","Marzo","Abril","Mayo","Junio",
+        "Julio","Agosto","Septiembre","Octubre",
+        "Noviembre","Diciembre")
+    ),
+    fecha = as.Date(paste(anio, mes_num, 1, sep = "-"))
+  ) %>%
+  drop_na(ipc) %>%
+  arrange(fecha) %>%
+  dplyr::select(fecha, ipc) %>%
+  mutate(
+    ipc_lag_12 = lag(ipc, 12),
+    inflacion_anual = log(ipc / ipc_lag_12) * 100
+  )
+
+# 2.3 Exportación de base procesada
+write_csv(ipc_clean, "../data/processed/IPC_limpio.csv")
+openxlsx::write.xlsx(ipc_clean, "../data/processed/IPC_limpio.xlsx")
+```
+
+El Índice de Precios al Consumidor (IPC) se incorpora como la variable dependiente principal del análisis, dado que constituye la medida oficial de la inflación en Colombia. El IPC refleja la variación en los precios de una canasta representativa de bienes y servicios consumidos por los hogares, permitiendo evaluar la evolución del poder adquisitivo y la estabilidad de precios.
+
+En el contexto del modelo VAR, la inflación se modela como una variable endógena que puede responder dinámicamente a choques provenientes del tipo de cambio, variables financieras y factores externos. Por tanto, su correcta transformación resulta fundamental para garantizar coherencia econométrica e interpretación económica clara.
+
+### 2.2.1 Transformación de la variable
+
+La inflación se construye a partir de la variación logarítmica interanual del IPC:
+
+$$
+\Delta_{12} \log(\text{IPC}_t)
+=
+\log\left(\frac{\text{IPC}_t}{\text{IPC}_{t-12}}\right)\times 100
+$$
+
+Esta especificación se adopta por tres razones principales:
+
+1.  **Interpretación económica:** La diferencia logarítmica aproxima la tasa de inflación anual en términos porcentuales.
+
+2.  **Consistencia temporal:** Dado que los efectos macroeconómicos suelen analizarse en horizontes anuales, la variación interanual captura mejor los procesos inflacionarios persistentes.
+
+3.  **Propiedades econométricas:** Trabajar en diferencias logarítmicas contribuye a reducir problemas de no estacionariedad asociados a series en niveles y facilita la estimación válida de modelos VAR.
+
+En consecuencia, la variable `inflacion_anual` representa la tasa de inflación anual expresada en porcentaje, coherente con la transformación aplicada a la TRM y con el marco metodológico del modelo, aunque para el caso de Colombia la transformación de esta variable no necesariamente la vuelve estacionaria y posiblemente haya que diferenciarla de nuevo.
+
+### 2.3 Tasa de Interés DTF (CDT a 90 días)
+
+```{r}
+#| include: false
+# ============================================================================
+# 3. LIMPIEZA Y PROCESAMIENTO DTF
+#    (Tasa promedio mensual - CDT a 90 días)
+# ============================================================================
+
+# 3.1 Lectura de datos
+dtf_raw <- read_excel("../data/processed/CDT_limpia.xlsx")%>%
+  janitor::clean_names()
+# 3.2 limpieza de datos
+dtf_clean <- dtf_raw %>%
+  dplyr::select(fecha, dtf_promedio_mensual) %>%
+  dplyr::rename(DTF_nivel = dtf_promedio_mensual) %>%
+  dplyr::mutate(
+    fecha = as.Date(as.numeric(fecha), origin = "1899-12-30"),
+    DTF_nivel = as.numeric(DTF_nivel)
+  ) %>%
+  dplyr::filter(!is.na(fecha), !is.na(DTF_nivel)) %>%
+  dplyr::arrange(fecha)
+# 3.2.1 llevar todo a incio de mes
+dtf_clean <- dtf_clean %>%
+  dplyr::mutate(
+    fecha = lubridate::floor_date(fecha, unit = "month")
+  )
+
+# 3.3 Diferenciar por no es estacionaria en niveles
+dtf_clean <- dtf_clean %>%
+  dplyr::mutate(DTF_diff = DTF_nivel - dplyr::lag(DTF_nivel))
 
 ```
+
+La tasa DTF, correspondiente al promedio mensual de los Certificados de Depósito a Término (CDT) a 90 días, se incorpora en el modelo como proxy de las condiciones monetarias domésticas de corto plazo. Esta variable refleja el costo del dinero en el mercado financiero colombiano y constituye un canal relevante de transmisión de la política monetaria hacia la actividad económica y la dinámica inflacionaria.
+
+En el marco de un modelo VAR, la DTF permite capturar el efecto de los choques monetarios internos sobre la inflación. Movimientos en la tasa de interés afectan el consumo, la inversión y las expectativas, incidiendo finalmente en la trayectoria de los precios.
+
+### 2.3.1 Especificación de la variable
+
+A diferencia del IPC y la TRM, la DTF no corresponde a un índice acumulativo sino a una tasa porcentual expresada en niveles. Por esta razón, no se transforma mediante diferencias logarítmicas.
+
+La variable se incorpora como:
+
+$$
+\text{DTF}_t
+$$
+
+Esta elección se fundamenta en tres consideraciones:
+
+1.  **Naturaleza de la variable:** Al ser una tasa de interés nominal, su interpretación económica se realiza directamente en niveles.
+
+2.  **Consistencia econométrica:** Las tasas de interés suelen presentar propiedades de estacionariedad en niveles o en primera diferencia, lo cual debe verificarse mediante pruebas de raíz unitaria.
+
+3.  **Interpretación dinámica:** Incluir la DTF en niveles facilita la lectura de las funciones impulso–respuesta, permitiendo analizar cómo un aumento de un punto porcentual en la tasa afecta la inflación.
+
+En consecuencia, la variable `DTF_nivel` representa la tasa de interés promedio mensual de los CDT a 90 días, utilizada como indicador de las condiciones monetarias internas.
+
+### 2.4 Indicador de Seguimiento a la Economía (ISE)
+
+```{r}
+#| include: false
+# ============================================================================
+# 4. LIMPIEZA Y PROCESAMIENTO ISE
+#    (Indicador de Seguimiento a la Economía - Serie mensual)
+# ============================================================================
+
+# 4.1 Lectura de datos
+ise_raw <- read_excel(
+  "../data/processed/anex-ISE-9actividades-nov2025-limpia.xlsx",
+  sheet = "indicadores"
+) %>%
+  janitor::clean_names()
+ise_clean <- ise_raw %>%
+  mutate(
+    fecha = as.Date(fecha)
+  ) %>%
+  arrange(fecha)
+```
+
+El Indicador de Seguimiento a la Economía (ISE) se emplea en este trabajo como una medida mensual de la actividad económica agregada en Colombia. Dado que el Producto Interno Bruto (PIB) se publica con frecuencia trimestral y con rezagos temporales, el ISE constituye un proxy adecuado de alta frecuencia, permitiendo capturar de manera más oportuna la dinámica del ciclo económico.
+
+La depuración y estructuración inicial de la base de datos se realizó principalmente en Excel. En esta etapa se verificó la consistencia de las fechas, la correcta identificación de las series y el cálculo de las transformaciones necesarias. Posteriormente, la base limpia fue importada a R exclusivamente para su integración con las demás variables del modelo y para asegurar la homogeneidad en el formato temporal.
+
+Para el análisis se utiliza la serie del ISE desestacionalizada. Esta elección responde a que las fluctuaciones estacionales pueden introducir patrones sistemáticos no relacionados con la dinámica económica estructural, lo cual podría generar relaciones espurias en el modelo VAR. Al emplear la serie ajustada por estacionalidad se elimina el componente recurrente asociado al calendario, reduciendo ruido y mejorando la identificación de choques macroeconómicos.
+
+### 2.4.1 Transformación de la variable
+
+Adicionalmente, se trabaja con la variación logarítmica interanual del ISE:
+
+$$
+\Delta_{12} \log(ISE_t) = \log\left(\frac{ISE_t}{ISE_{t-12}}\right) \times 100
+$$
+
+Esta transformación permite:
+
+-   Interpretar la variable como una tasa de crecimiento porcentual anual.
+-   Reducir problemas de no estacionariedad en niveles.
+-   Homogeneizar las unidades de medida con las demás variables transformadas en el modelo.
+
+En consecuencia, el ISE desestacionalizado en variación logarítmica anual se incorpora como proxy del componente real de la economía dentro del sistema VAR.

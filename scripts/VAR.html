@@ -2344,13 +2344,13 @@ window.Quarto = {
 </section>
 <section id="limpieza-de-bases-de-datos" class="level2">
 <h2 class="anchored" data-anchor-id="limpieza-de-bases-de-datos">2. Limpieza de bases de datos</h2>
-</section>
-<section id="tasa-representativa-del-mercado-trm" class="level2">
-<h2 class="anchored" data-anchor-id="tasa-representativa-del-mercado-trm">2.1 Tasa Representativa del Mercado (TRM)</h2>
+<section id="tasa-representativa-del-mercado-trm" class="level3">
+<h3 class="anchored" data-anchor-id="tasa-representativa-del-mercado-trm">2.1 Tasa Representativa del Mercado (TRM)</h3>
 <p>La Tasa Representativa del Mercado (TRM) se incorpora en el modelo como una variable fundamental para capturar los efectos del canal cambiario sobre la dinámica inflacionaria en Colombia. Dado que la economía colombiana es abierta y presenta una alta dependencia de bienes importados, las variaciones en el tipo de cambio afectan directamente los precios internos a través del mecanismo de pass-through cambiario.</p>
 <p>En particular, una depreciación del peso colombiano encarece los bienes importados y los insumos intermedios, lo cual puede trasladarse a los precios al consumidor. Por esta razón, la TRM constituye un determinante relevante dentro del sistema VAR, permitiendo evaluar la transmisión de choques externos hacia la inflación doméstica.</p>
+</section>
 <section id="transformación-de-la-variable" class="level3">
-<h3 class="anchored" data-anchor-id="transformación-de-la-variable">Transformación de la variable</h3>
+<h3 class="anchored" data-anchor-id="transformación-de-la-variable">2.1.1 Transformación de la variable</h3>
 <p>La TRM se transforma utilizando la diferencia logarítmica a 12 meses:</p>
 <p><span class="math display">\[
 \Delta_{12} \log(\text{TRM}_t)=\log\left(\frac{\text{TRM}_t}{\text{TRM}_{t-12}}\right)\times 100
@@ -2365,6 +2365,64 @@ window.Quarto = {
 </section>
 <section id="índice-de-precios-al-consumidor-ipc" class="level3">
 <h3 class="anchored" data-anchor-id="índice-de-precios-al-consumidor-ipc">2.2 Índice de Precios al Consumidor (IPC)</h3>
+<p>El Índice de Precios al Consumidor (IPC) se incorpora como la variable dependiente principal del análisis, dado que constituye la medida oficial de la inflación en Colombia. El IPC refleja la variación en los precios de una canasta representativa de bienes y servicios consumidos por los hogares, permitiendo evaluar la evolución del poder adquisitivo y la estabilidad de precios.</p>
+<p>En el contexto del modelo VAR, la inflación se modela como una variable endógena que puede responder dinámicamente a choques provenientes del tipo de cambio, variables financieras y factores externos. Por tanto, su correcta transformación resulta fundamental para garantizar coherencia econométrica e interpretación económica clara.</p>
+</section>
+<section id="transformación-de-la-variable-1" class="level3">
+<h3 class="anchored" data-anchor-id="transformación-de-la-variable-1">2.2.1 Transformación de la variable</h3>
+<p>La inflación se construye a partir de la variación logarítmica interanual del IPC:</p>
+<p><span class="math display">\[
+\Delta_{12} \log(\text{IPC}_t)
+=
+\log\left(\frac{\text{IPC}_t}{\text{IPC}_{t-12}}\right)\times 100
+\]</span></p>
+<p>Esta especificación se adopta por tres razones principales:</p>
+<ol type="1">
+<li><p><strong>Interpretación económica:</strong> La diferencia logarítmica aproxima la tasa de inflación anual en términos porcentuales.</p></li>
+<li><p><strong>Consistencia temporal:</strong> Dado que los efectos macroeconómicos suelen analizarse en horizontes anuales, la variación interanual captura mejor los procesos inflacionarios persistentes.</p></li>
+<li><p><strong>Propiedades econométricas:</strong> Trabajar en diferencias logarítmicas contribuye a reducir problemas de no estacionariedad asociados a series en niveles y facilita la estimación válida de modelos VAR.</p></li>
+</ol>
+<p>En consecuencia, la variable <code>inflacion_anual</code> representa la tasa de inflación anual expresada en porcentaje, coherente con la transformación aplicada a la TRM y con el marco metodológico del modelo, aunque para el caso de Colombia la transformación de esta variable no necesariamente la vuelve estacionaria y posiblemente haya que diferenciarla de nuevo.</p>
+</section>
+<section id="tasa-de-interés-dtf-cdt-a-90-días" class="level3">
+<h3 class="anchored" data-anchor-id="tasa-de-interés-dtf-cdt-a-90-días">2.3 Tasa de Interés DTF (CDT a 90 días)</h3>
+<p>La tasa DTF, correspondiente al promedio mensual de los Certificados de Depósito a Término (CDT) a 90 días, se incorpora en el modelo como proxy de las condiciones monetarias domésticas de corto plazo. Esta variable refleja el costo del dinero en el mercado financiero colombiano y constituye un canal relevante de transmisión de la política monetaria hacia la actividad económica y la dinámica inflacionaria.</p>
+<p>En el marco de un modelo VAR, la DTF permite capturar el efecto de los choques monetarios internos sobre la inflación. Movimientos en la tasa de interés afectan el consumo, la inversión y las expectativas, incidiendo finalmente en la trayectoria de los precios.</p>
+</section>
+<section id="especificación-de-la-variable" class="level3">
+<h3 class="anchored" data-anchor-id="especificación-de-la-variable">2.3.1 Especificación de la variable</h3>
+<p>A diferencia del IPC y la TRM, la DTF no corresponde a un índice acumulativo sino a una tasa porcentual expresada en niveles. Por esta razón, no se transforma mediante diferencias logarítmicas.</p>
+<p>La variable se incorpora como:</p>
+<p><span class="math display">\[
+\text{DTF}_t
+\]</span></p>
+<p>Esta elección se fundamenta en tres consideraciones:</p>
+<ol type="1">
+<li><p><strong>Naturaleza de la variable:</strong> Al ser una tasa de interés nominal, su interpretación económica se realiza directamente en niveles.</p></li>
+<li><p><strong>Consistencia econométrica:</strong> Las tasas de interés suelen presentar propiedades de estacionariedad en niveles o en primera diferencia, lo cual debe verificarse mediante pruebas de raíz unitaria.</p></li>
+<li><p><strong>Interpretación dinámica:</strong> Incluir la DTF en niveles facilita la lectura de las funciones impulso–respuesta, permitiendo analizar cómo un aumento de un punto porcentual en la tasa afecta la inflación.</p></li>
+</ol>
+<p>En consecuencia, la variable <code>DTF_nivel</code> representa la tasa de interés promedio mensual de los CDT a 90 días, utilizada como indicador de las condiciones monetarias internas.</p>
+</section>
+<section id="indicador-de-seguimiento-a-la-economía-ise" class="level3">
+<h3 class="anchored" data-anchor-id="indicador-de-seguimiento-a-la-economía-ise">2.4 Indicador de Seguimiento a la Economía (ISE)</h3>
+<p>El Indicador de Seguimiento a la Economía (ISE) se emplea en este trabajo como una medida mensual de la actividad económica agregada en Colombia. Dado que el Producto Interno Bruto (PIB) se publica con frecuencia trimestral y con rezagos temporales, el ISE constituye un proxy adecuado de alta frecuencia, permitiendo capturar de manera más oportuna la dinámica del ciclo económico.</p>
+<p>La depuración y estructuración inicial de la base de datos se realizó principalmente en Excel. En esta etapa se verificó la consistencia de las fechas, la correcta identificación de las series y el cálculo de las transformaciones necesarias. Posteriormente, la base limpia fue importada a R exclusivamente para su integración con las demás variables del modelo y para asegurar la homogeneidad en el formato temporal.</p>
+<p>Para el análisis se utiliza la serie del ISE desestacionalizada. Esta elección responde a que las fluctuaciones estacionales pueden introducir patrones sistemáticos no relacionados con la dinámica económica estructural, lo cual podría generar relaciones espurias en el modelo VAR. Al emplear la serie ajustada por estacionalidad se elimina el componente recurrente asociado al calendario, reduciendo ruido y mejorando la identificación de choques macroeconómicos.</p>
+</section>
+<section id="transformación-de-la-variable-2" class="level3">
+<h3 class="anchored" data-anchor-id="transformación-de-la-variable-2">2.4.1 Transformación de la variable</h3>
+<p>Adicionalmente, se trabaja con la variación logarítmica interanual del ISE:</p>
+<p><span class="math display">\[
+\Delta_{12} \log(ISE_t) = \log\left(\frac{ISE_t}{ISE_{t-12}}\right) \times 100
+\]</span></p>
+<p>Esta transformación permite:</p>
+<ul>
+<li>Interpretar la variable como una tasa de crecimiento porcentual anual.</li>
+<li>Reducir problemas de no estacionariedad en niveles.</li>
+<li>Homogeneizar las unidades de medida con las demás variables transformadas en el modelo.</li>
+</ul>
+<p>En consecuencia, el ISE desestacionalizado en variación logarítmica anual se incorpora como proxy del componente real de la economía dentro del sistema VAR.</p>
 </section>
 </section>
 
