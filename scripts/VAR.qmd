@@ -58,7 +58,9 @@ packages <- c(
   "fpp3",
   "zoo",
   "ggplot2",
-  "forecast"
+  "forecast",
+  "dplyr",
+  "moments"
 )
 
 # Identifica cuáles paquetes no están instalados
@@ -96,40 +98,44 @@ En conjunto, estas librerías permiten construir un entorno reproducible y robus
 ### 2.1 Tasa Representativa del Mercado (TRM)
 
 ```{r}
-#| label: TRM
-#| warning: true
 #| include: false
-# ============================================================================
-# 1. Procesamiento de la TRM
-#    (Tasa Representativa del Mercado - datos diarios)
-# ============================================================================
+## =============================================================================
+# TRM (Tasa Representativa del Mercado): limpieza y mensualización
+# - Estandariza la fecha al inicio de cada mes
+# - Construye una serie mensual (promedio mensual)
+# - Calcula variación logarítmica interanual (12 meses)
+# =============================================================================
 
-# 1.1 Lectura de datos
-TRM_raw <- read_excel("../data/raw/TRM.xlsx")
+TRM_raw <- readxl::read_excel("../data/raw/TRM.xlsx")
 
-# 1.2 Limpieza y transformación
 TRM_clean <- TRM_raw %>%
-  slice(-1) %>%  # Eliminación de fila de metadatos
-  rename(
+  dplyr::slice(-1) %>% 
+  dplyr::rename(
     Fecha = names(.)[1],
     TRM_fin_mes = names(.)[2],
     TRM_promedio = names(.)[3]
   ) %>%
-  mutate(
+  dplyr::mutate(
     Fecha = as.Date(Fecha, format = "%d/%m/%Y"),
-    TRM_fin_mes = as.numeric(gsub(",", ".", gsub("\\.", "", TRM_fin_mes))),
     TRM_promedio = as.numeric(gsub(",", ".", gsub("\\.", "", TRM_promedio)))
   ) %>%
-  drop_na(TRM_promedio) %>%
-  arrange(Fecha) %>%
-  mutate(
-    TRM_promedio_lag_12 = lag(TRM_promedio, 12),
+  tidyr::drop_na(TRM_promedio) %>%
+  dplyr::mutate(
+    fecha = lubridate::floor_date(Fecha, unit = "month")
+  ) %>%
+  dplyr::group_by(fecha) %>%
+  dplyr::summarise(
+    TRM_promedio = mean(TRM_promedio, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  dplyr::arrange(fecha) %>%
+  dplyr::mutate(
+    TRM_promedio_lag_12 = dplyr::lag(TRM_promedio, 12),
     TRM_log = log(TRM_promedio / TRM_promedio_lag_12) * 100
   ) %>%
-  dplyr::select(Fecha, TRM_promedio, TRM_log)
+  dplyr::select(fecha, TRM_promedio, TRM_log)
 
-# 1.3 Almacenamiento
-write_csv(TRM_clean, "../data/processed/TRM_limpia.csv")
+readr::write_csv(TRM_clean, "../data/processed/TRM_limpia.csv")
 saveRDS(TRM_clean, "../data/processed/TRM_limpia.rds")
 
 rm(TRM_raw)
@@ -327,3 +333,432 @@ Esta transformación permite:
 -   Homogeneizar las unidades de medida con las demás variables transformadas en el modelo.
 
 En consecuencia, el ISE desestacionalizado en variación logarítmica anual se incorpora como proxy del componente real de la economía dentro del sistema VAR.
+
+### 2.5 Variable Exógena: Inflación de Estados Unidos
+
+```{r}
+#| include: false
+cpi_us_raw <- read_excel("../data/raw/CPIAUCSL.xlsx", sheet= 'Monthly')%>%
+  janitor::clean_names()
+ cpi_us <- cpi_us_raw %>%
+  mutate(
+    observation_date = as.Date(observation_date),
+    cpi_lag_12 = dplyr::lag(cpiaucsl, 12),
+    us_inflacion = log(cpiaucsl / cpi_lag_12) * 100
+  ) %>%
+  dplyr::select(observation_date, us_inflacion)
+```
+
+Con el fin de capturar la influencia de las condiciones macroeconómicas externas sobre la economía colombiana, se incorpora como variable exógena la inflación de Estados Unidos.
+
+### 2.5.1 Transformación de la variable
+
+La serie utilizada corresponde al índice *Consumer Price Index for All Urban Consumers (All Items), Seasonally Adjusted* (CPIAUCSL). Dado que esta serie se encuentra en niveles, se transforma en variación logarítmica interanual con el objetivo de obtener una tasa de inflación anual y reducir posibles problemas de no estacionariedad:
+
+$$
+\Delta_{12} \log(CPI_t^{US}) =
+\log\left(\frac{CPI_t^{US}}{CPI_{t-12}^{US}}\right) \times 100
+$$
+
+La inclusión de esta variable se fundamenta en que Colombia es una economía pequeña y abierta, por lo que los choques inflacionarios internacionales pueden afectar las condiciones financieras globales, las expectativas, los flujos de capital y, en consecuencia, el comportamiento del tipo de cambio y la dinámica inflacionaria interna.
+
+Esta variable se incorpora como exógena en el modelo VAR bajo el supuesto de que la economía colombiana no influye en la determinación de la inflación estadounidense.
+
+### 2.6 Variable Exógena: Precio Internacional del Petróleo (Brent)
+
+```{r}
+#| include: false
+brent_daily <- read_excel("../data/raw/DCOILBRENTEU.xlsx", sheet = 'Daily')%>%
+  janitor::clean_names()
+brent_mensual <- brent_daily %>%
+  mutate(
+    observation_date = as.Date(observation_date),
+    fecha = floor_date(observation_date, "month")
+  ) %>%
+  group_by(fecha) %>%
+  summarise(
+    brent = mean(dcoilbrenteu, na.rm = TRUE)
+  ) %>%
+  ungroup()
+brent_mensual <- brent_mensual %>%
+  arrange(fecha) %>%
+  mutate(
+    brent_log_12 = log(brent / lag(brent, 12)) * 100
+  ) %>%
+  filter(fecha >= as.Date("2006-01-01"))
+```
+
+El precio internacional del petróleo Brent se incorpora como variable exógena con el objetivo de capturar choques externos reales que afectan a la economía colombiana. Dado el papel del sector petrolero en las exportaciones, en los términos de intercambio y en las cuentas fiscales, las variaciones del precio internacional del crudo constituyen un determinante relevante de la dinámica macroeconómica doméstica.
+
+### 2.6.1 Transformación de la variable
+
+La serie original se encuentra en frecuencia diaria. Con el fin de hacerla consistente con el resto de las variables del modelo (frecuencia mensual), se construye el promedio mensual del precio diario:
+
+$$
+Brent_{m} = \frac{1}{N_m} \sum_{d=1}^{N_m} Brent_{d}
+$$
+
+donde (N_m) corresponde al número de días observados en el mes (m). El uso del promedio mensual reduce la volatilidad de alta frecuencia y permite aproximar el precio representativo enfrentado por la economía durante cada periodo.
+
+Posteriormente, la serie mensual se transforma en variación logarítmica interanual:
+
+$$
+\Delta_{12} \log(Brent_t) =
+\log\left(\frac{Brent_t}{Brent_{t-12}}\right) \times 100
+$$
+
+Esta transformación permite interpretar la variable como la tasa de crecimiento porcentual anual del precio del petróleo y contribuye a mitigar problemas de no estacionariedad asociados a series en niveles.
+
+Dado que el cálculo de la variación interanual requiere 12 observaciones previas, la serie transformada inicia en enero de 2006, utilizando como base el valor correspondiente a enero de 2005. Esta decisión garantiza consistencia temporal en la construcción de la variable y alineación con el periodo de análisis del modelo.\
+\
+**Nota**: para este trabajo se unificaron todas las variables en una misma base datos que empieza desde el 2006-1 hasta 2026-1 (solo algunas variables pero conssrvando NA's para no perder datos reales)
+
+```{r}
+#| include: false
+# =========================
+# BASE CONSOLIDADA 2006-01+
+# =========================
+
+#ISE
+ise_base <- ise_clean %>%
+  dplyr::filter(fecha >= as.Date("2006-01-01"))
+
+#Inflación Colombia (IPC)
+inflacion_co_base <- ipc_clean %>%
+  dplyr::select(fecha, inflacion_anual) %>%
+  dplyr::filter(fecha >= as.Date("2006-01-01"))
+
+#DTF
+dtf_base <- dtf_clean %>%
+  dplyr::select(fecha, DTF_nivel, DTF_diff) %>%
+  dplyr::filter(fecha >= as.Date("2006-01-01"))
+
+#TRM
+trm_base <- TRM_clean %>%
+  dplyr::mutate(fecha = as.Date(fecha)) %>%
+  dplyr::select(fecha, TRM_log) %>%
+  dplyr::filter(fecha >= as.Date("2006-01-01"))
+
+#Inflación EE.UU.
+cpi_us_base <- cpi_us %>%
+  dplyr::rename(fecha = observation_date) %>%
+  dplyr::filter(fecha >= as.Date("2006-01-01"))
+
+#Brent
+brent_base <- brent_mensual %>%
+  dplyr::select(fecha, brent_log_12) %>%
+  dplyr::filter(fecha >= as.Date("2006-01-01"))
+
+
+# =========================
+# UNIÓN COMPLETA (MANTIENE NA)
+# =========================
+
+base_final <- ise_base %>%
+  dplyr::full_join(inflacion_co_base, by = "fecha") %>%
+  dplyr::full_join(dtf_base, by = "fecha") %>%
+  dplyr::full_join(trm_base, by = "fecha") %>%
+  dplyr::full_join(cpi_us_base, by = "fecha") %>%
+  dplyr::full_join(brent_base, by = "fecha") %>%
+  dplyr::arrange(fecha)
+
+
+# =============================================================================
+# SELECCIÓN DE VARIABLES FINALES PARA EL MODELO VAR
+# - Se conserva únicamente una medida por bloque macroeconómico
+# - Se eliminan variables auxiliares no utilizadas en la estimación
+# =============================================================================
+
+base_modelo <- base_final %>%
+  dplyr::select(
+    fecha,
+    inflacion_anual,   # Inflación Colombia (variable endógena principal)
+    TRM_log,           # Depreciación anual del tipo de cambio
+    DTF_nivel,         # Tasa de interés doméstica
+    ise_dae_log,       # Proxy de actividad económica (desestacionalizado)
+    us_inflacion,      # Inflación de EE.UU. (exógena)
+    brent_log_12       # Choque externo: precio del petróleo
+  ) %>%
+  dplyr::arrange(fecha)
+```
+
+## 3. Analisís exploratorio
+
+### 3.1 Gráficas de las series 
+
+```{r}
+#| label: eda_series_6_variables_estetico
+#| echo: false
+#| message: false
+#| warning: false
+
+# =============================================================================
+# VISUALIZACIÓN DE SERIES TEMPORALES (6 VARIABLES - VERSIÓN ACADÉMICA)
+# =============================================================================
+
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(lubridate)
+library(scales)
+
+# Base final del modelo
+df <- base_modelo %>%
+  dplyr::mutate(fecha = as.Date(fecha)) %>%
+  dplyr::select(
+    fecha,
+    inflacion_anual,
+    TRM_log,
+    DTF_nivel,
+    ise_dae_log,
+    us_inflacion,
+    brent_log_12
+  ) %>%
+  dplyr::arrange(fecha)
+
+# Etiquetas académicas (cortas y claras)
+labels_vars <- c(
+  inflacion_anual = "Inflación Colombia (log 12)",
+  TRM_log         = "TRM (log 12)",
+  DTF_nivel       = "DTF (nivel)",
+  ise_dae_log     = "ISE (log 12, DAE)",
+  us_inflacion    = "Inflación EE.UU. (log 12)",
+  brent_log_12    = "Precio del petróleo Brent (log 12)"
+)
+
+# Paleta académica sobria (6 colores distintos)
+colores_vars <- c(
+  inflacion_anual = "#1B3C73",  # Azul oscuro
+  TRM_log         = "#2A9D8F",  # Verde azulado
+  DTF_nivel       = "#E76F51",  # Rojo suave
+  ise_dae_log     = "#6A4C93",  # Morado
+  us_inflacion    = "#264653",  # Verde oscuro
+  brent_log_12    = "#F4A261"   # Naranja suave
+)
+
+# Formato largo
+df_long <- df %>%
+  tidyr::pivot_longer(
+    cols = -fecha,
+    names_to = "variable",
+    values_to = "valor"
+  )
+
+# Gráfico académico mejorado
+p <- ggplot(df_long, aes(x = fecha, y = valor, color = variable)) +
+  geom_line(linewidth = 0.7, na.rm = TRUE) +
+  facet_wrap(~ variable, ncol = 2, scales = "free_y",
+             labeller = as_labeller(labels_vars)) +
+  scale_color_manual(values = colores_vars, guide = "none") +
+  scale_x_date(
+    breaks = scales::pretty_breaks(n = 8),
+    labels = scales::label_date("%Y")
+  ) +
+  labs(
+    title = "Series macroeconómicas del modelo VAR",
+    x = "Fecha",
+    y = "Valor"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+    strip.text = element_text(face = "bold", size = 11),
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(color = "grey85"),
+    panel.spacing = unit(1.2, "lines"),
+    axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold")
+  )
+
+# Guardar figura en alta calidad (formato académico)
+ggsave(
+  filename = "../outputs/EDA/01_series_macroeconomicas_VAR.pdf",
+  plot = p,
+  width = 11,
+  height = 8.5,
+  dpi = 300
+)
+
+p
+```
+
+### 3.2 Histogramas
+
+```{r}
+#| label: eda_histogramas_6_variables
+#| echo: false
+#| message: false
+#| warning: false
+
+# =============================================================================
+# ANÁLISIS DE DISTRIBUCIONES: HISTOGRAMAS Y DENSIDADES (6 VARIABLES)
+# =============================================================================
+
+# Base del modelo
+df <- base_modelo %>%
+  dplyr::select(
+    inflacion_anual,
+    TRM_log,
+    DTF_nivel,
+    ise_dae_log,
+    us_inflacion,
+    brent_log_12
+  )
+
+# Etiquetas académicas
+labels_vars <- c(
+  inflacion_anual = "Inflación Colombia (log 12)",
+  TRM_log         = "TRM (log 12)",
+  DTF_nivel       = "DTF (nivel)",
+  ise_dae_log     = "ISE (log 12, DAE)",
+  us_inflacion    = "Inflación EE.UU. (log 12)",
+  brent_log_12    = "Precio del petróleo Brent (log 12)"
+)
+
+# Misma paleta académica utilizada en las series
+colores_vars <- c(
+  inflacion_anual = "#1B3C73",
+  TRM_log         = "#2A9D8F",
+  DTF_nivel       = "#E76F51",
+  ise_dae_log     = "#6A4C93",
+  us_inflacion    = "#264653",
+  brent_log_12    = "#F4A261"
+)
+
+# Formato largo
+df_long <- df %>%
+  tidyr::pivot_longer(
+    cols = everything(),
+    names_to = "variable",
+    values_to = "valor"
+  )
+
+# =========================
+# HISTOGRAMAS (6 VARIABLES)
+# =========================
+
+p_hist <- ggplot(df_long, aes(x = valor, fill = variable)) +
+  geom_histogram(
+    bins = 25,
+    color = "black",
+    alpha = 0.85
+  ) +
+  geom_vline(
+    aes(xintercept = valor, color = variable),
+    data = df_long %>%
+      group_by(variable) %>%
+      summarise(valor = mean(valor, na.rm = TRUE)),
+    linetype = "dashed",
+    linewidth = 0.8,
+    show.legend = FALSE
+  ) +
+  facet_wrap(
+    ~ variable,
+    ncol = 2,
+    scales = "free",
+    labeller = as_labeller(labels_vars)
+  ) +
+  scale_fill_manual(values = colores_vars, guide = "none") +
+  scale_color_manual(values = colores_vars, guide = "none") +
+  labs(
+    title = "Distribución de las variables del modelo VAR",
+    x = "Valor",
+    y = "Frecuencia"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+    strip.text = element_text(face = "bold", size = 11),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.y = element_line(color = "grey85"),
+    panel.spacing = unit(1.2, "lines")
+  )
+
+ggsave(
+  filename = "../outputs/EDA/02_histogramas_6_variables.pdf",
+  plot = p_hist,
+  width = 11,
+  height = 8.5,
+  dpi = 300
+)
+
+p_hist
+
+
+# =========================
+# DENSIDADES (6 VARIABLES)
+# =========================
+
+p_density <- ggplot(df_long, aes(x = valor, color = variable)) +
+  geom_density(linewidth = 1) +
+  facet_wrap(
+    ~ variable,
+    ncol = 2,
+    scales = "free",
+    labeller = as_labeller(labels_vars)
+  ) +
+  scale_color_manual(values = colores_vars, guide = "none") +
+  labs(
+    title = "Densidad empírica de las variables macroeconómicas",
+    x = "Valor",
+    y = "Densidad"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+    strip.text = element_text(face = "bold", size = 11),
+    panel.grid.minor = element_blank(),
+    panel.spacing = unit(1.2, "lines")
+  )
+
+ggsave(
+  filename = "../outputs/EDA/03_densidades_6_variables.pdf",
+  plot = p_density,
+  width = 11,
+  height = 8.5,
+  dpi = 300
+)
+
+p_density
+
+
+
+# =========================
+# ASIMETRÍA Y CURTOSIS (TABLA EN LaTeX)
+# =========================
+
+tabla_normalidad <- data.frame(
+  Variable = c(
+    "Inflación Colombia (log 12)",
+    "TRM (log 12)",
+    "DTF (nivel)",
+    "ISE (log 12, DAE)",
+    "Inflación EE.UU. (log 12)",
+    "Precio del petróleo Brent (log 12)"
+  ),
+  Asimetria = c(
+    moments::skewness(df$inflacion_anual, na.rm = TRUE),
+    moments::skewness(df$TRM_log, na.rm = TRUE),
+    moments::skewness(df$DTF_nivel, na.rm = TRUE),
+    moments::skewness(df$ise_dae_log, na.rm = TRUE),
+    moments::skewness(df$us_inflacion, na.rm = TRUE),
+    moments::skewness(df$brent_log_12, na.rm = TRUE)
+  ),
+  Curtosis = c(
+    moments::kurtosis(df$inflacion_anual, na.rm = TRUE),
+    moments::kurtosis(df$TRM_log, na.rm = TRUE),
+    moments::kurtosis(df$DTF_nivel, na.rm = TRUE),
+    moments::kurtosis(df$ise_dae_log, na.rm = TRUE),
+    moments::kurtosis(df$us_inflacion, na.rm = TRUE),
+    moments::kurtosis(df$brent_log_12, na.rm = TRUE)
+  )
+)
+
+knitr::kable(
+  tabla_normalidad,
+  format = "latex",
+  booktabs = TRUE,
+  digits = 4,
+  caption = "Asimetría y curtosis de las variables del modelo VAR"
+)
+```
