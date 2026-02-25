@@ -60,7 +60,11 @@ packages <- c(
   "ggplot2",
   "forecast",
   "dplyr",
-  "moments"
+  "moments",
+  "gridExtra",
+  "scales",
+  "tidyr",
+  "quarto"
 )
 
 # Identifica cuáles paquetes no están instalados
@@ -145,7 +149,7 @@ La Tasa Representativa del Mercado (TRM) se incorpora en el modelo como una vari
 
 En particular, una depreciación del peso colombiano encarece los bienes importados y los insumos intermedios, lo cual puede trasladarse a los precios al consumidor. Por esta razón, la TRM constituye un determinante relevante dentro del sistema VAR, permitiendo evaluar la transmisión de choques externos hacia la inflación doméstica.
 
-### 2.1.1 Transformación de la variable
+#### 2.1.1 Transformación de la variable
 
 La TRM se transforma utilizando la diferencia logarítmica a 12 meses:
 
@@ -212,7 +216,7 @@ El Índice de Precios al Consumidor (IPC) se incorpora como la variable dependie
 
 En el contexto del modelo VAR, la inflación se modela como una variable endógena que puede responder dinámicamente a choques provenientes del tipo de cambio, variables financieras y factores externos. Por tanto, su correcta transformación resulta fundamental para garantizar coherencia econométrica e interpretación económica clara.
 
-### 2.2.1 Transformación de la variable
+#### 2.2.1 Transformación de la variable
 
 La inflación se construye a partir de la variación logarítmica interanual del IPC:
 
@@ -270,7 +274,7 @@ La tasa DTF, correspondiente al promedio mensual de los Certificados de Depósit
 
 En el marco de un modelo VAR, la DTF permite capturar el efecto de los choques monetarios internos sobre la inflación. Movimientos en la tasa de interés afectan el consumo, la inversión y las expectativas, incidiendo finalmente en la trayectoria de los precios.
 
-### 2.3.1 Especificación de la variable
+#### 2.3.1 Especificación de la variable
 
 A diferencia del IPC y la TRM, la DTF no corresponde a un índice acumulativo sino a una tasa porcentual expresada en niveles. Por esta razón, no se transforma mediante diferencias logarítmicas.
 
@@ -318,7 +322,7 @@ La depuración y estructuración inicial de la base de datos se realizó princip
 
 Para el análisis se utiliza la serie del ISE desestacionalizada. Esta elección responde a que las fluctuaciones estacionales pueden introducir patrones sistemáticos no relacionados con la dinámica económica estructural, lo cual podría generar relaciones espurias en el modelo VAR. Al emplear la serie ajustada por estacionalidad se elimina el componente recurrente asociado al calendario, reduciendo ruido y mejorando la identificación de choques macroeconómicos.
 
-### 2.4.1 Transformación de la variable
+#### 2.4.1 Transformación de la variable
 
 Adicionalmente, se trabaja con la variación logarítmica interanual del ISE:
 
@@ -351,7 +355,7 @@ cpi_us_raw <- read_excel("../data/raw/CPIAUCSL.xlsx", sheet= 'Monthly')%>%
 
 Con el fin de capturar la influencia de las condiciones macroeconómicas externas sobre la economía colombiana, se incorpora como variable exógena la inflación de Estados Unidos.
 
-### 2.5.1 Transformación de la variable
+#### 2.5.1 Transformación de la variable
 
 La serie utilizada corresponde al índice *Consumer Price Index for All Urban Consumers (All Items), Seasonally Adjusted* (CPIAUCSL). Dado que esta serie se encuentra en niveles, se transforma en variación logarítmica interanual con el objetivo de obtener una tasa de inflación anual y reducir posibles problemas de no estacionariedad:
 
@@ -390,7 +394,7 @@ brent_mensual <- brent_mensual %>%
 
 El precio internacional del petróleo Brent se incorpora como variable exógena con el objetivo de capturar choques externos reales que afectan a la economía colombiana. Dado el papel del sector petrolero en las exportaciones, en los términos de intercambio y en las cuentas fiscales, las variaciones del precio internacional del crudo constituyen un determinante relevante de la dinámica macroeconómica doméstica.
 
-### 2.6.1 Transformación de la variable
+#### 2.6.1 Transformación de la variable
 
 La serie original se encuentra en frecuencia diaria. Con el fin de hacerla consistente con el resto de las variables del modelo (frecuencia mensual), se construye el promedio mensual del precio diario:
 
@@ -484,7 +488,7 @@ base_modelo <- base_final %>%
 
 ## 3. Analisís exploratorio
 
-### 3.1 Gráficas de las series 
+### 3.1 Gráficas de las series
 
 ```{r}
 #| label: eda_series_6_variables_estetico
@@ -496,11 +500,6 @@ base_modelo <- base_final %>%
 # VISUALIZACIÓN DE SERIES TEMPORALES (6 VARIABLES - VERSIÓN ACADÉMICA)
 # =============================================================================
 
-library(dplyr)
-library(ggplot2)
-library(tidyr)
-library(lubridate)
-library(scales)
 
 # Base final del modelo
 df <- base_modelo %>%
@@ -593,7 +592,6 @@ p
 # =============================================================================
 # ANÁLISIS DE DISTRIBUCIONES: HISTOGRAMAS Y DENSIDADES (6 VARIABLES)
 # =============================================================================
-
 # Base del modelo
 df <- base_modelo %>%
   dplyr::select(
@@ -722,43 +720,641 @@ ggsave(
 p_density
 
 
-
 # =========================
-# ASIMETRÍA Y CURTOSIS (TABLA EN LaTeX)
+# ASIMETRÍA Y CURTOSIS
 # =========================
 
-tabla_normalidad <- data.frame(
-  Variable = c(
-    "Inflación Colombia (log 12)",
-    "TRM (log 12)",
-    "DTF (nivel)",
-    "ISE (log 12, DAE)",
-    "Inflación EE.UU. (log 12)",
-    "Precio del petróleo Brent (log 12)"
-  ),
-  Asimetria = c(
-    moments::skewness(df$inflacion_anual, na.rm = TRUE),
-    moments::skewness(df$TRM_log, na.rm = TRUE),
-    moments::skewness(df$DTF_nivel, na.rm = TRUE),
-    moments::skewness(df$ise_dae_log, na.rm = TRUE),
-    moments::skewness(df$us_inflacion, na.rm = TRUE),
-    moments::skewness(df$brent_log_12, na.rm = TRUE)
-  ),
-  Curtosis = c(
-    moments::kurtosis(df$inflacion_anual, na.rm = TRUE),
-    moments::kurtosis(df$TRM_log, na.rm = TRUE),
-    moments::kurtosis(df$DTF_nivel, na.rm = TRUE),
-    moments::kurtosis(df$ise_dae_log, na.rm = TRUE),
-    moments::kurtosis(df$us_inflacion, na.rm = TRUE),
-    moments::kurtosis(df$brent_log_12, na.rm = TRUE)
-  )
-)
+for (var in names(df)) {
+  skew <- moments::skewness(df[[var]], na.rm = TRUE)
+  kurt <- moments::kurtosis(df[[var]], na.rm = TRUE)
 
-knitr::kable(
-  tabla_normalidad,
-  format = "latex",
-  booktabs = TRUE,
-  digits = 4,
-  caption = "Asimetría y curtosis de las variables del modelo VAR"
-)
+}
 ```
+
+### 3.2.1 Análisis de Normalidad: Asimetría y Curtosis
+
+| Variable                           | Asimetría | Curtosis |
+|------------------------------------|-----------|----------|
+| Inflación Colombia (log 12)        | 1.2445    | 4.1946   |
+| TRM (log 12)                       | 0.4660    | 3.5525   |
+| DTF (nivel)                        | 0.8530    | 3.0320   |
+| ISE (log 12, DAE)                  | -1.4565   | 13.6334  |
+| Inflación EE.UU. (log 12)          | 1.0118    | 4.7052   |
+| Precio del petróleo Brent (log 12) | -0.3224   | 3.5258   |
+
+### 3.3 Análisis exploratorio de las series temporales
+
+A partir de los gráficos de series de tiempo se observan diferencias relevantes en el comportamiento dinámico de las variables incluidas en el modelo VAR. En particular, las variables expresadas en diferencias logarítmicas interanuales (inflación, TRM, ISE, inflación de EE.UU. y precio del petróleo) presentan trayectorias más estables alrededor de una media, lo que sugiere una posible aproximación a la estacionariedad en comparación con las series en niveles.
+
+No obstante, se identifican episodios de alta volatilidad en algunas variables, especialmente en el precio del petróleo Brent y en la inflación colombiana, lo cual podría indicar la presencia de choques estructurales o cambios de régimen. Este comportamiento sugiere que, pese a la transformación logarítmica interanual, podría ser necesario evaluar formalmente la estacionariedad mediante pruebas de raíz unitaria e incluso considerar una diferenciación adicional en caso de persistencia estocástica.
+
+El ISE en variación logarítmica desestacionalizada muestra una dinámica coherente con el ciclo económico, comportándose de manera similar a lo esperado para un proxy mensual del PIB. Esto respalda su uso como indicador de actividad económica en modelos macroeconómicos de alta frecuencia, dado que captura fluctuaciones reales de la economía de forma más oportuna que el PIB trimestral.
+
+Por otro lado, la DTF en niveles no exhibe un comportamiento claramente estacionario, lo cual es consistente desde el punto de vista económico. En economías como la colombiana, la tasa de interés responde activamente a la política monetaria y a las condiciones macroeconómicas, actuando como instrumento de estabilización del Banco Central. En este sentido, su variabilidad en niveles es esperable y refleja ajustes de política frente a choques inflacionarios y del ciclo económico.
+
+### 3.4 Análisis de distribuciones: histogramas y densidades
+
+Los histogramas permiten analizar la distribución empírica de las variables, mostrando la frecuencia de observaciones por intervalos y la concentración de los datos alrededor de ciertos valores centrales. La línea punteada representa la media de cada serie, lo que facilita identificar el grado de dispersión y la distancia de las observaciones respecto a su valor promedio, ofreciendo una interpretación complementaria similar a la de un diagrama de caja, aunque sin resumir explícitamente los cuantiles.
+
+En términos estadísticos, las distribuciones evidencian asimetrías moderadas en varias variables macroeconómicas, particularmente en la inflación colombiana y la inflación de Estados Unidos, lo cual es consistente con la presencia de choques inflacionarios no simétricos a lo largo del tiempo. Asimismo, la curtosis elevada en el ISE sugiere una mayor concentración de observaciones cerca de la media y presencia de valores extremos en periodos de choques económicos.
+
+Finalmente, los gráficos de densidad constituyen una aproximación no paramétrica a la función de densidad de probabilidad de cada serie. A partir de estos se pueden identificar características como asimetría, concentración de masa probabilística y posibles formas unimodales o multimodales. En conjunto, estos resultados aportan evidencia preliminar sobre las propiedades estadísticas de las variables y refuerzan la necesidad de validar formalmente supuestos de estacionariedad y normalidad antes de la estimación del modelo VAR.
+
+## 4. Estacionariedad, orden de integración y caracterización del proceso generador de datos
+
+### 4.1 Fundamentación econométrica de la estacionariedad en modelos VAR
+
+La estimación de modelos dinámicos en series de tiempo requiere caracterizar adecuadamente las propiedades estocásticas de las variables. En particular, la estacionariedad es una condición central en modelos VAR, ya que implica que la media, la varianza y la estructura de covarianzas del proceso no cambian sistemáticamente a lo largo del tiempo. Bajo estacionariedad, los parámetros estimados describen relaciones dinámicas relativamente estables, lo que hace posible interpretar de manera consistente la dependencia temporal, los choques (innovaciones) y sus efectos sobre el sistema.
+
+En contextos macroeconómicos, trabajar con series no estacionarias puede inducir problemas de regresión espuria: variables que comparten tendencias o patrones persistentes pueden exhibir alta correlación y significancia estadística aun cuando no exista una relación económica estructural entre ellas. Por esta razón, antes de especificar el modelo VAR se evalúa formalmente el orden de integración de cada serie mediante pruebas de raíz unitaria y pruebas complementarias de estacionariedad.
+
+El modelo VAR se adopta debido a que las variables macroeconómicas consideradas —inflación, tipo de cambio, tasa de interés y actividad económica— se determinan conjuntamente y presentan retroalimentación dinámica. A diferencia de modelos univariados, el VAR permite capturar interacciones endógenas entre variables, cuantificar la transmisión de choques mediante funciones impulso–respuesta y evaluar la contribución relativa de cada innovación a la variabilidad del sistema a través de descomposiciones de varianza. Además, este enfoque es útil para pronóstico, dado que explota la información contenida en la dinámica conjunta del vector de variables.
+
+Adicionalmente, se incorpora un conjunto de variables exógenas (VARX) para representar condiciones internacionales que influyen sobre la economía colombiana pero no son determinadas por ella, consistente con la hipótesis de economía pequeña y abierta. En particular, la inflación de Estados Unidos y el precio internacional del petróleo capturan shocks externos relevantes que pueden afectar expectativas, condiciones financieras globales, términos de intercambio y, a través de estos canales, la dinámica inflacionaria doméstica.
+
+En conjunto, asegurar la estacionariedad (o, en su defecto, aplicar transformaciones consistentes con el orden de integración de las series) es un paso necesario para obtener inferencia válida, interpretar adecuadamente la transmisión dinámica entre variables y construir pronósticos creíbles de inflación, variable central para el análisis macroeconómico y la evaluación de política monetaria en Colombia.
+
+### 4.2 Análisis de dependencia temporal: correlogramas (ACF y PACF) - diagnostico estructural
+
+```{r}
+#| label: correlogramas_acf_pacf
+#| echo: false
+#| message: false
+#| warning: false
+#| 
+# Variables del modelo (ya transformadas)
+vars_ts <- base_modelo %>%
+  dplyr::select(
+    inflacion_anual,
+    TRM_log,
+    DTF_nivel,
+    ise_dae_log,
+    us_inflacion,
+    brent_log_12
+  ) %>%
+  na.omit()
+
+# Función para graficar ACF y PACF de forma académica
+plot_acf_pacf <- function(series, nombre) {
+  p1 <- ggAcf(series, lag.max = 24) +
+    ggtitle(paste("ACF -", nombre)) +
+    theme_minimal(base_size = 11) +
+    theme(
+      plot.title = element_text(face = "bold", hjust = 0.5)
+    )
+  
+  p2 <- ggPacf(series, lag.max = 24) +
+    ggtitle(paste("PACF -", nombre)) +
+    theme_minimal(base_size = 11) +
+    theme(
+      plot.title = element_text(face = "bold", hjust = 0.5)
+    )
+  
+  gridExtra::grid.arrange(p1, p2, ncol = 2)
+}
+
+plot_acf_pacf(vars_ts$inflacion_anual, "Inflación Colombia (log 12)")
+plot_acf_pacf(vars_ts$TRM_log, "TRM (log 12)")
+plot_acf_pacf(vars_ts$DTF_nivel, "DTF (nivel)")
+plot_acf_pacf(vars_ts$ise_dae_log, "ISE (log, DAE)")
+plot_acf_pacf(vars_ts$us_inflacion, "Inflación EE.UU. (log 12)")
+plot_acf_pacf(vars_ts$brent_log_12, "Precio del petróleo Brent (log 12)")
+```
+
+La función de autocorrelación (ACF) y la función de autocorrelación parcial (PACF) constituyen herramientas fundamentales para el análisis preliminar de la dinámica temporal de las series macroeconómicas. Mientras la ACF mide la persistencia total de la serie a lo largo de distintos rezagos, la PACF permite identificar la dependencia directa entre observaciones, controlando por el efecto de los rezagos intermedios. En conjunto, estos correlogramas permiten caracterizar la memoria del proceso estocástico, evaluar la velocidad de ajuste ante choques y detectar posibles indicios de no estacionariedad antes de realizar pruebas formales de raíz unitaria.
+
+En este estudio, las series han sido transformadas principalmente en variaciones logarítmicas interanuales (Δ12 log), con excepción de la DTF que se mantiene en niveles debido a su naturaleza como tasa de interés. Esta transformación reduce tendencias determinísticas y facilita la interpretación económica en términos de variaciones porcentuales anuales; sin embargo, no garantiza por sí misma la estacionariedad del proceso generador de datos.
+
+Con el fin de realizar un diagnóstico estructural coherente, la interpretación de los correlogramas se basa en tres criterios analíticos: (i) persistencia, evaluada a través de la velocidad de decaimiento de la ACF; (ii) dinámica de corto plazo, identificada mediante los picos significativos en la PACF; y (iii) presencia de ciclos o mecanismos de ajuste, evidenciados por oscilaciones amortiguadas o cambios de signo en la autocorrelación.
+
+#### Inflación de Colombia (Δ12 log IPC)
+
+La ACF muestra una persistencia elevada en los primeros rezagos y un decaimiento gradual, lo que sugiere una memoria considerable del proceso inflacionario. Este comportamiento es consistente con la existencia de inercia inflacionaria, donde los choques sobre los precios no se disipan inmediatamente sino que afectan la dinámica de la inflación durante varios periodos.
+
+Por su parte, la PACF presenta significancia principalmente en los primeros rezagos, lo que indica que la dinámica de corto plazo está dominada por dependencias directas recientes. En términos económicos, este patrón es coherente con economías donde las expectativas y los mecanismos de indexación influyen en la persistencia de la inflación. No obstante, la lenta caída de la ACF sugiere que, incluso tras la transformación interanual, la serie mantiene memoria relevante, lo que motiva la verificación formal de estacionariedad mediante pruebas de raíz unitaria.
+
+#### Tasa Representativa del Mercado (TRM, Δ12 log)
+
+La TRM exhibe una autocorrelación positiva significativa en rezagos bajos y un decaimiento relativamente rápido, seguido de cambios de signo en rezagos posteriores. Este patrón sugiere la presencia de mecanismos de ajuste y reversión ante choques cambiarios, lo cual resulta consistente con la naturaleza volátil del tipo de cambio en economías abiertas y sensibles a condiciones externas.
+
+La PACF muestra dependencia directa principalmente en el primer rezago, indicando que los movimientos recientes del tipo de cambio explican gran parte de su dinámica inmediata. La ausencia de un corte abrupto en la ACF sugiere que el proceso no corresponde a un modelo puramente de media móvil, sino que es más compatible con una dinámica autorregresiva persistente influenciada por choques externos.
+
+#### Tasa DTF (nivel)
+
+La DTF presenta autocorrelaciones muy elevadas y un decaimiento lento en la ACF, lo cual es característico de series altamente persistentes y potencialmente no estacionarias en niveles. Este comportamiento es esperable desde el punto de vista económico, dado que la tasa de interés responde a decisiones de política monetaria, cambios en expectativas y condiciones macroeconómicas, generando dinámicas de ajuste gradual.
+
+La PACF evidencia una fuerte dependencia en los primeros rezagos, sugiriendo que la dinámica de corto plazo está dominada por su propio comportamiento pasado. En consecuencia, la elevada persistencia observada refuerza la necesidad de contrastar formalmente la presencia de raíz unitaria mediante pruebas ADF, Phillips-Perron y KPSS.
+
+#### Indicador de Seguimiento a la Economía (ISE, log 12, DAE)
+
+El ISE desestacionalizado en logaritmos presenta una ACF con decaimiento progresivo y cierta evidencia de dinámica cíclica, lo cual es coherente con su rol como proxy mensual del ciclo económico. La PACF concentra su significancia en los primeros rezagos, indicando que la actividad económica responde principalmente a shocks recientes, aunque con efectos que se propagan gradualmente en el tiempo.
+
+Este comportamiento es consistente con la literatura macroeconómica, donde la actividad económica muestra persistencia y posibles fluctuaciones cíclicas asociadas al ciclo económico.
+
+#### Inflación de Estados Unidos (Δ12 log)
+
+La inflación estadounidense presenta un patrón de persistencia en los primeros rezagos, aunque con un decaimiento relativamente más rápido que el observado en la inflación colombiana. Esto sugiere una menor inercia inflacionaria y una mayor velocidad de ajuste ante choques, lo cual es coherente con un marco de política monetaria más creíble y anclaje de expectativas inflacionarias.
+
+La PACF indica dependencia directa de corto plazo, con alternancia en los signos de los rezagos, lo que puede interpretarse como un proceso de ajuste dinámico tras choques inflacionarios.
+
+#### Precio del petróleo Brent (Δ12 log)
+
+El precio del petróleo muestra una ACF con persistencia inicial y posterior reversión, acompañada de cambios de signo en rezagos superiores. Este patrón es consistente con la naturaleza cíclica de los commodities y la presencia de choques externos que generan episodios de volatilidad seguidos de procesos de corrección.
+
+La PACF evidencia que la dinámica contemporánea está fuertemente influenciada por los rezagos inmediatos, lo cual sugiere que los shocks en los precios internacionales del petróleo tienen efectos relevantes en el corto plazo pero con mecanismos de ajuste posteriores.
+
+#### Síntesis del diagnóstico preliminar
+
+En términos generales, los correlogramas evidencian que las series macroeconómicas analizadas presentan dependencia temporal significativa y alta persistencia, incluso después de aplicar transformaciones logarítmicas interanuales. La mayoría de las ACF muestran un decaimiento gradual en lugar de un corte abrupto, lo que resulta más consistente con dinámicas autorregresivas persistentes que con procesos puramente de media móvil.
+
+Asimismo, la significancia de los primeros rezagos en la PACF sugiere que la dinámica de corto plazo está dominada por dependencias directas recientes, mientras que los cambios de signo en algunos correlogramas indican posibles mecanismos de ajuste y reversión ante choques macroeconómicos.
+
+No obstante, es importante enfatizar que los correlogramas ofrecen únicamente evidencia descriptiva. Estos no constituyen pruebas formales de estacionariedad ni permiten identificar de manera única el proceso generador de datos (DGP). En particular, la persistencia observada sugiere que, incluso tras la transformación interanual, varias series mantienen memoria considerable, lo cual podría estar asociado tanto a raíces unitarias como a quiebres estructurales en el periodo de análisis.
+
+Por esta razón, el análisis de correlogramas se emplea como un insumo preliminar dentro del enfoque econométrico, y será complementado en la siguiente sección mediante una batería formal de pruebas de raíz unitaria (ADF, Phillips-Perron y KPSS), así como pruebas con quiebre estructural endógeno (Zivot-Andrews), con el objetivo de determinar rigurosamente el orden de integración de las series antes de la estimación del modelo VAR.
+
+### 4.3 Pruebas de raíz unitaria
+
+#### 4.3.1 Prueba Dickey-Fuller Aumentada (ADF)
+
+```{r}
+#| label: adf_tests_urca
+#| message: false
+#| warning: false
+#| include: false
+
+
+# =========================
+# 4.3.1 Prueba Dickey-Fuller Aumentada (ADF)
+# Especificación con tendencia y con drift
+# =========================
+
+# Selección de variables del modelo
+series_adf <- base_modelo %>%
+  dplyr::select(
+    inflacion_anual,
+    TRM_log,
+    DTF_nivel,
+    ise_dae_log,
+    us_inflacion,
+    brent_log_12
+  )
+
+# Eliminación de NA por variable (importante para pruebas de raíz unitaria)
+inflacion <- na.omit(series_adf$inflacion_anual)
+trm       <- na.omit(series_adf$TRM_log)
+dtf       <- na.omit(series_adf$DTF_nivel)
+ise       <- na.omit(series_adf$ise_dae_log)
+us_inf    <- na.omit(series_adf$us_inflacion)
+brent     <- na.omit(series_adf$brent_log_12)
+
+# Número de rezagos (frecuencia mensual)
+lags_adf <- 12
+
+# =========================
+# ADF con tendencia (trend)
+# =========================
+
+adf_inflacion_trend <- ur.df(inflacion, type = "trend", lags = lags_adf)
+adf_trm_trend       <- ur.df(trm,       type = "trend", lags = lags_adf)
+adf_dtf_trend       <- ur.df(dtf,       type = "trend", lags = lags_adf)
+adf_ise_trend       <- ur.df(ise,       type = "trend", lags = lags_adf)
+adf_us_trend        <- ur.df(us_inf,    type = "trend", lags = lags_adf)
+adf_brent_trend     <- ur.df(brent,     type = "trend", lags = lags_adf)
+
+summary(adf_inflacion_trend)
+summary(adf_trm_trend)
+summary(adf_dtf_trend)
+summary(adf_ise_trend)
+summary(adf_us_trend)
+summary(adf_brent_trend)
+
+# =========================
+# ADF con constante (drift)
+# =========================
+
+adf_inflacion_drift <- ur.df(inflacion, type = "drift", lags = lags_adf)
+adf_trm_drift       <- ur.df(trm,       type = "drift", lags = lags_adf)
+adf_dtf_drift       <- ur.df(dtf,       type = "drift", lags = lags_adf)
+adf_ise_drift       <- ur.df(ise,       type = "drift", lags = lags_adf)
+adf_us_drift        <- ur.df(us_inf,    type = "drift", lags = lags_adf)
+adf_brent_drift     <- ur.df(brent,     type = "drift", lags = lags_adf)
+
+summary(adf_inflacion_drift)
+summary(adf_trm_drift)
+summary(adf_dtf_drift)
+summary(adf_ise_drift)
+summary(adf_us_drift)
+summary(adf_brent_drift)
+```
+
+A partir de la prueba ADF estimada bajo especificaciones con tendencia (trend) y con constante (drift), se observa que el término de tendencia no resulta estadísticamente relevante en la mayoría de las series, lo cual es consistente con el hecho de que las variables (excepto la DTF) han sido transformadas en variaciones logarítmicas interanuales (Δ12 log), reduciendo la probabilidad de una tendencia determinística.
+
+Bajo la especificación principal con constante (drift), los resultados sugieren evidencia de estacionariedad para el crecimiento anual del ISE (Δ12 log), al rechazarse la hipótesis nula de raíz unitaria al 5%. En contraste, para inflación de Colombia, TRM e inflación de EE.UU., la prueba ADF no permite rechazar la presencia de raíz unitaria al 5%, lo cual indica alta persistencia incluso tras la transformación interanual. Para la DTF y el precio del petróleo Brent los resultados son borderline, rechazándose la raíz unitaria únicamente a niveles de significancia menos exigentes (10%).
+
+Dado que la prueba ADF puede presentar baja potencia en muestras finitas y en presencia de persistencia elevada o quiebres estructurales, estos resultados se complementan con las pruebas Phillips–Perron (PP) y KPSS, así como con pruebas con quiebre endógeno (Zivot–Andrews), antes de concluir el orden de integración de cada serie.
+
+#### 4.3.2 Prueba Phillips–Perron (PP)
+
+Con el fin de complementar los resultados de la prueba Dickey–Fuller Aumentada (ADF), se aplica la prueba Phillips–Perron (PP). Al igual que el ADF, la prueba PP contrasta la hipótesis nula de presencia de raíz unitaria (no estacionariedad) frente a la alternativa de estacionariedad.
+
+La diferencia central radica en que la prueba PP no incorpora rezagos adicionales en la regresión auxiliar, sino que corrige el estadístico de prueba mediante estimadores robustos de la varianza de largo plazo, lo que la hace menos sensible a heterocedasticidad y autocorrelación en los errores. Esto resulta especialmente relevante en series macroeconómicas, donde la persistencia elevada y posibles cambios de varianza pueden afectar la potencia y la inferencia del ADF.
+
+En consecuencia, la prueba PP se utiliza como contraste de robustez: si ADF y PP coinciden en no rechazar la hipótesis nula, aumenta la evidencia a favor de raíz unitaria; si difieren, la decisión final se apoya en KPSS y en pruebas con quiebre estructural (Zivot–Andrews).
+
+```{r}
+#| label: pp_tests_named
+#| message: false
+#| warning: false
+#| include: false
+
+library(dplyr)
+library(tseries)
+
+series_pp <- base_modelo %>%
+  dplyr::select(
+    inflacion_anual,
+    TRM_log,
+    DTF_nivel,
+    ise_dae_log,
+    us_inflacion,
+    brent_log_12
+  )
+
+names(series_pp) <- c(
+  "Inflación Colombia (log 12)",
+  "TRM (log 12)",
+  "DTF (nivel)",
+  "ISE (log 12, DAE)",
+  "Inflación EE.UU. (log 12)",
+  "Brent (log 12)"
+)
+
+pp_results <- lapply(series_pp, function(x) tseries::pp.test(na.omit(x)))
+
+pp_results
+```
+
+Los resultados de la prueba Phillips–Perron evidencian un comportamiento heterogéneo en términos de estacionariedad. En particular, no se rechaza la hipótesis nula de raíz unitaria para la inflación de Colombia, la inflación de Estados Unidos y la tasa DTF en niveles, lo que sugiere una elevada persistencia temporal incluso tras las transformaciones aplicadas.
+
+En contraste, la TRM, el ISE y el precio del petróleo en variación logarítmica interanual rechazan la hipótesis nula, indicando estacionariedad. Este resultado es consistente con la naturaleza cíclica de las variables reales y externas, frente a la mayor inercia de las variables monetarias e inflacionarias en economías abiertas.
+
+#### 4.3.3 Prueba KPSS
+
+Para complementar las pruebas ADF y Phillips–Perron, se aplica la prueba KPSS (Kwiatkowski–Phillips–Schmidt–Shin). A diferencia de ADF/PP, la KPSS plantea como hipótesis nula que la serie es estacionaria. En particular, se consideran dos especificaciones: (i) estacionariedad alrededor de una constante (level-stationary) y (ii) estacionariedad alrededor de una constante y una tendencia determinística (trend-stationary).
+
+Dado que las series del modelo han sido transformadas en variaciones logarítmicas interanuales $(\Delta_{12}\log)$ , no se espera la presencia de una tendencia determinística; por lo tanto, la especificación principal se realiza bajo estacionariedad alrededor de una constante. No obstante, la versión con tendencia se reporta como verificación de robustez.
+
+La interpretación conjunta se realiza así: si ADF/PP no rechazan raíz unitaria y KPSS rechaza estacionariedad, la evidencia favorece no estacionariedad. Si ADF/PP rechazan raíz unitaria y KPSS no rechaza estacionariedad, la evidencia favorece estacionariedad. En caso de resultados mixtos, se consideran pruebas con quiebre endógeno (Zivot–Andrews) antes de concluir el orden de integración.
+
+```{r}
+#| label: kpss_tests
+#| message: false
+#| warning: false
+#| include: false
+
+library(dplyr)
+library(tseries)
+
+series_kpss <- base_modelo %>%
+  dplyr::select(
+    inflacion_anual,
+    TRM_log,
+    DTF_nivel,
+    ise_dae_log,
+    us_inflacion,
+    brent_log_12
+  )
+
+names(series_kpss) <- c(
+  "Inflación Colombia (log 12)",
+  "TRM (log 12)",
+  "DTF (nivel)",
+  "ISE (log 12, DAE)",
+  "Inflación EE.UU. (log 12)",
+  "Brent (log 12)"
+)
+
+# KPSS nivel (H0: estacionaria alrededor de constante)
+kpss_mu <- lapply(series_kpss, function(x) {
+  x <- stats::na.omit(x)
+  tseries::kpss.test(x, null = "Level")
+})
+
+# KPSS tendencia (H0: estacionaria alrededor de tendencia)
+kpss_tau <- lapply(series_kpss, function(x) {
+  x <- stats::na.omit(x)
+  tseries::kpss.test(x, null = "Trend")
+})
+
+kpss_mu
+
+kpss_tau
+```
+
+Los resultados del test KPSS evidencian que no todas las series presentan el mismo grado de estacionariedad, incluso después de la transformación en variaciones logarítmicas interanuales (Δ12 log). En particular, el ISE y el precio internacional del petróleo (Brent) no permiten rechazar la hipótesis nula de estacionariedad, lo que sugiere que las tasas de crecimiento anual de la actividad económica y del precio del crudo se comportan como procesos aproximadamente estacionarios alrededor de una constante.
+
+Este resultado es coherente con el análisis previo de los correlogramas (ACF y PACF), donde ambas series mostraban una rápida disipación de la autocorrelación y ausencia de persistencia de largo plazo, rasgos típicos de procesos estacionarios en tasas de crecimiento.
+
+Por el contrario, la inflación de Colombia, la inflación de Estados Unidos y la tasa DTF presentan estadísticos KPSS significativos, lo que implica el rechazo de la hipótesis nula de estacionariedad. Este hallazgo es consistente tanto con los correlogramas —que evidenciaban una caída lenta de la ACF y alta persistencia temporal— como con la teoría macroeconómica, dado que las variables nominales y las tasas de interés suelen exhibir fuerte inercia inflacionaria, rigideces y posibles cambios estructurales asociados a choques monetarios, externos y de política económica.
+
+En el caso particular de economías emergentes como la colombiana, es común que la inflación mantenga persistencia incluso en variaciones logarítmicas interanuales. Esto se debe a la presencia de mecanismos de indexación, transmisión incompleta de la política monetaria, choques externos (tipo de cambio, petróleo) y credibilidad monetaria en proceso de consolidación, factores que generan memoria inflacionaria y dificultan la convergencia rápida hacia una media constante.
+
+Asimismo, la TRM en variación logarítmica interanual muestra evidencia de estacionariedad débil bajo la especificación con constante, lo cual resulta coherente con su naturaleza como variable financiera altamente volátil pero con reversión parcial a la media en tasas de crecimiento, tal como se sugería en el análisis del correlograma mediante cambios de signo y rápida amortiguación de la autocorrelación.
+
+En conjunto, la evidencia combinada de los correlogramas y del test KPSS sugiere que la transformación en tasas (Δ12 log) reduce sustancialmente los problemas de no estacionariedad, aunque algunas series macroeconómicas clave conservan alta persistencia. Este resultado es metodológicamente relevante para la especificación del modelo VAR, ya que indica que las series se encuentran en un orden de integración bajo o cercano a la estacionariedad en tasas, evitando problemas severos de regresiones espurias, pero manteniendo dinámicas macroeconómicas realistas propias de procesos inflacionarios y financieros.
+
+#### 4.3.4 Prueba de Zivot-Andrews (raíz unitaria con quiebre estructural)
+
+Dado que las series macroeconómicas pueden estar sujetas a cambios estructurales derivados de choques externos, crisis financieras, cambios de política monetaria y transformaciones del entorno económico, se emplea la prueba de Zivot-Andrews. A diferencia de las pruebas tradicionales de raíz unitaria (ADF y PP), este test permite la existencia de un quiebre estructural endógeno en la serie temporal.
+
+La hipótesis nula establece que la serie presenta raíz unitaria sin quiebres estructurales, mientras que la hipótesis alternativa plantea que la serie es estacionaria alrededor de un quiebre en nivel, tendencia o ambos. En este trabajo se utiliza la especificación con quiebre en intercepto y tendencia, lo cual resulta apropiado para series macroeconómicas caracterizadas por episodios de cambio de régimen.
+
+La inclusión de esta prueba es particularmente relevante en economías emergentes como la colombiana, donde variables como la inflación, el tipo de cambio y las tasas de interés suelen experimentar rupturas estructurales asociadas a choques externos, cambios en la política monetaria y episodios de volatilidad financiera. En consecuencia, el test de Zivot-Andrews permite distinguir entre verdadera no estacionariedad y estacionariedad con quiebres estructurales, fortaleciendo la identificación del orden de integración previo a la estimación del modelo VAR.
+
+```{r}
+#| label: zivot_andrews_tests
+#| message: false
+#| warning: false
+#| include: false
+
+# Selección de variables del modelo
+series_za <- base_modelo %>%
+  dplyr::select(
+    inflacion_anual,
+    TRM_log,
+    DTF_nivel,
+    ise_dae_log,
+    us_inflacion,
+    brent_log_12
+  )
+
+# Eliminación de NA
+inflacion <- na.omit(series_za$inflacion_anual)
+trm       <- na.omit(series_za$TRM_log)
+dtf       <- na.omit(series_za$DTF_nivel)
+ise       <- na.omit(series_za$ise_dae_log)
+us_inf    <- na.omit(series_za$us_inflacion)
+brent     <- na.omit(series_za$brent_log_12)
+
+# Zivot-Andrews (modelo con quiebre en tendencia y constante)
+za_inflacion <- ur.za(inflacion, model = "both", lag = 12)
+za_trm       <- ur.za(trm,       model = "both", lag = 12)
+za_dtf       <- ur.za(dtf,       model = "both", lag = 12)
+za_ise       <- ur.za(ise,       model = "both", lag = 12)
+za_us        <- ur.za(us_inf,    model = "both", lag = 12)
+za_brent     <- ur.za(brent,     model = "both", lag = 12)
+
+summary(za_inflacion)
+summary(za_trm)
+summary(za_dtf)
+summary(za_ise)
+summary(za_us)
+summary(za_brent)
+
+```
+
+Se adopta la especificación con quiebre en intercepto y tendencia (model = “both”), apropiada para series macroeconómicas sujetas a cambios de régimen.
+
+#### 4.3.5 Tabla comparativa
+
++----------------------------------------+---------------------------------------+------------------+--------------------------+------------------------------+-----------------+--------------------------+------------------------------------------------------------------------------------------------------------------------------------+
+| **Serie (variable)**                   | **Transformación usada en el modelo** | **PP (p-value)** | **KPSS nivel (p-value)** | **KPSS tendencia (p-value)** | **ZA (t-stat)** | **ZA (break, posición)** | **Lectura preliminar (con base en p-values y críticos)**                                                                           |
++========================================+=======================================+==================+==========================+==============================+=================+==========================+====================================================================================================================================+
+| Inflación Colombia (`inflacion_anual`) | $\Delta_{12}\log(IPC)\times 100$      | 0.6953           | 0.01                     | 0.01                         | -3.5436         | 192                      | PP **no** rechaza raíz unitaria; KPSS **rechaza** estacionariedad; ZA **no** rechaza a 10%/5%                                      |
++----------------------------------------+---------------------------------------+------------------+--------------------------+------------------------------+-----------------+--------------------------+------------------------------------------------------------------------------------------------------------------------------------+
+| TRM (`TRM_log`)                        | $\Delta_{12}\log(TRM)\times 100$      | 0.04462          | 0.0715                   | 0.01                         | -3.9264         | 103                      | PP **rechaza** raíz unitaria (5%); KPSS nivel **no** rechaza (débil); ZA **no** rechaza                                            |
++----------------------------------------+---------------------------------------+------------------+--------------------------+------------------------------+-----------------+--------------------------+------------------------------------------------------------------------------------------------------------------------------------+
+| DTF (`DTF_nivel`)                      | Nivel (%)                             | 0.8074           | 0.01095                  | 0.01                         | -4.9422         | 193                      | PP **no** rechaza raíz unitaria; KPSS **rechaza** estacionariedad; ZA **rechaza al 10%** (porque -4.94 \< -4.82) pero **no al 5%** |
++----------------------------------------+---------------------------------------+------------------+--------------------------+------------------------------+-----------------+--------------------------+------------------------------------------------------------------------------------------------------------------------------------+
+| ISE DAE (`ise_dae_log`)                | $\Delta_{12}\log(ISE)\times 100$      | 0.01             | 0.1                      | 0.1                          | -4.4344         | 182                      | PP **rechaza** raíz unitaria; KPSS **no** rechaza estacionariedad; ZA **no** rechaza                                               |
++----------------------------------------+---------------------------------------+------------------+--------------------------+------------------------------+-----------------+--------------------------+------------------------------------------------------------------------------------------------------------------------------------+
+| Inflación EE.UU. (`us_inflacion`)      | $\Delta_{12}\log(CPI^{US})\times 100$ | 0.2434           | 0.01                     | 0.01                         | -3.7201         | 182                      | PP **no** rechaza raíz unitaria; KPSS **rechaza** estacionariedad; ZA **no** rechaza                                               |
++----------------------------------------+---------------------------------------+------------------+--------------------------+------------------------------+-----------------+--------------------------+------------------------------------------------------------------------------------------------------------------------------------+
+| Brent (`brent_log_12`)                 | $\Delta_{12}\log(Brent)\times 100$    | 0.01             | 0.1                      | 0.1                          | -3.3976         | 179                      | PP **rechaza** raíz unitaria; KPSS **no** rechaza estacionariedad; ZA **no** rechaza                                               |
++----------------------------------------+---------------------------------------+------------------+--------------------------+------------------------------+-----------------+--------------------------+------------------------------------------------------------------------------------------------------------------------------------+
+
+En conjunto, la evidencia de las pruebas PP, KPSS y Zivot-Andrews sugiere que las series macroeconómicas no comparten el mismo grado de estacionariedad, incluso tras su transformación en variaciones logarítmicas interanuales.
+
+En particular, el ISE y el precio del petróleo (Brent) muestran resultados consistentes de estacionariedad según PP y KPSS, lo que indica que las tasas de crecimiento de la actividad económica y de los precios internacionales del crudo se comportan como procesos aproximadamente estacionarios alrededor de una media constante.
+
+Por el contrario, la inflación de Colombia, la inflación de Estados Unidos y la tasa DTF exhiben alta persistencia y evidencia de no estacionariedad, resultado coherente con la naturaleza inercial de las variables nominales y de política monetaria en economías abiertas y emergentes. La prueba de Zivot-Andrews confirma que esta persistencia no se explica únicamente por quiebres estructurales, sino por una dinámica estocástica altamente persistente.
+
+Finalmente, la TRM en tasas de crecimiento presenta evidencia mixta pero compatible con estacionariedad débil, lo cual es consistente con su carácter de variable financiera sujeta a choques externos, volatilidad cambiaria y episodios de ajuste rápido.
+
+Estos resultados son coherentes con el diagnóstico estructural obtenido a partir de los correlogramas, donde se observó alta persistencia en las funciones de autocorrelación, especialmente en las variables nominales, lo que refuerza la necesidad de modelar la dinámica mediante un enfoque VAR en tasas de crecimiento.
+
+#### Explicación de comportamiento de variables en los test.
+
+Los resultados muestran que la transformación en variaciones logarítmicas interanuales reduce sustancialmente los problemas de no estacionariedad, especialmente en variables reales como el ISE y en variables externas como el precio del petróleo, cuyas tasas de crecimiento tienden a oscilar alrededor de una media estable.
+
+En particular, el ISE ajustado estacionalmente y expresado en Δ12 log se comporta como una serie aproximadamente estacionaria, lo cual es consistente con la teoría macroeconómica, dado que las tasas de crecimiento de la producción suelen ser estacionarias aun cuando el nivel del producto siga un proceso integrado.
+
+Por el contrario, la TRM presenta un comportamiento más mixto y persistente, lo cual resulta coherente con su naturaleza como variable financiera en una economía emergente, sujeta a choques externos, flujos de capital y episodios de volatilidad cambiaria. A diferencia del precio internacional del petróleo, que se determina en mercados globales profundos, el tipo de cambio incorpora dinámicas internas y externas que generan mayor persistencia temporal.
+
+Asimismo, la inflación, tanto en Colombia como en Estados Unidos, exhibe elevada persistencia incluso en variaciones interanuales, lo que sugiere la presencia de inercia inflacionaria y posibles cambios de régimen monetario, especialmente en contextos de choques globales recientes.
+
+### 4.5 Determinación del orden de integración de las series
+
+A partir de la evidencia conjunta de las pruebas ADF, Phillips-Perron, KPSS y Zivot-Andrews, se concluye que las series no comparten un mismo grado de integración en niveles. Sin embargo, tras su transformación en variaciones logarítmicas interanuales (Δ12 log), la mayoría de las variables presentan un comportamiento compatible con estacionariedad débil o estacionariedad alrededor de una media.
+
+En particular, las variables reales como el ISE y las variables externas como el precio del petróleo (Brent) muestran resultados robustos de estacionariedad según PP y KPSS, lo cual sugiere que sus tasas de crecimiento anual siguen procesos I(0). Este resultado es consistente con la teoría macroeconómica, dado que las tasas de crecimiento del producto y de los precios internacionales suelen ser estacionarias, aun cuando sus niveles sean integrados.
+
+Por su parte, la inflación de Colombia, la inflación de Estados Unidos y la TRM presentan mayor persistencia temporal, aunque sin evidencia concluyente de raíz unitaria tras la transformación interanual. Este comportamiento refleja la naturaleza inercial de las variables nominales y financieras, especialmente en economías abiertas y emergentes caracterizadas por choques externos y cambios de régimen.
+
+En consecuencia, se adopta una especificación del modelo en tasas de crecimiento (Δ12 log) para las variables macroeconómicas, mientras que la tasa DTF se mantiene en nivel, dado su carácter de variable de política monetaria. Esta decisión permite garantizar la estabilidad del sistema dinámico y evitar problemas de regresión espuria en la estimación del VARX.
+
++---------------+--------------------------+-------------------------------------------+------------------------+
+| **Variable**  | **Transformación final** | **Evidencia de estacionariedad**          | **Decisión para VARX** |
++===============+==========================+===========================================+========================+
+| Inflación COL | Δ12 log                  | Mixta (ADF/PP/KPSS) con alta persistencia | Endógena en tasas      |
++---------------+--------------------------+-------------------------------------------+------------------------+
+| ISE (DAE)     | Δ12 log                  | Estacionaria (PP y KPSS consistentes)     | Endógena en tasas      |
++---------------+--------------------------+-------------------------------------------+------------------------+
+| TRM           | Δ12 log                  | Persistencia moderada, evidencia mixta    | Endógena en tasas      |
++---------------+--------------------------+-------------------------------------------+------------------------+
+| DTF           | Nivel                    | Alta persistencia en nivel                | Endógena en nivel      |
++---------------+--------------------------+-------------------------------------------+------------------------+
+| Inflación USA | Δ12 log                  | Persistencia nominal esperada             | Exógena en tasas       |
++---------------+--------------------------+-------------------------------------------+------------------------+
+| Brent         | Δ12 log                  | Estacionaria en tasas (robusta)           | Exógena en tasas       |
++---------------+--------------------------+-------------------------------------------+------------------------+
+
+A diferencia de las demás variables macroeconómicas, la tasa DTF se mantiene en niveles en la especificación del modelo VARX. Esta decisión se fundamenta tanto en criterios econométricos como económicos. Desde el punto de vista económico, la DTF constituye un instrumento de política monetaria que presenta comportamiento altamente persistente pero típicamente mean-reverting, oscilando alrededor de un régimen determinado por la autoridad monetaria.
+
+En la literatura macroeconométrica, las tasas de interés suelen modelarse en niveles dentro de sistemas VAR, dado que su diferenciación elimina información relevante sobre la postura de política monetaria y dificulta la interpretación estructural de los shocks.
+
+Adicionalmente, a diferencia de variables de precios o actividad económica, la DTF no sigue un proceso de crecimiento acumulativo, por lo que su transformación logarítmica o diferenciación no resulta económicamente apropiada. En consecuencia, se opta por mantener la DTF en nivel, mientras que las demás variables se especifican en variaciones logarítmicas interanuales (Δ12 log), garantizando la estabilidad del sistema dinámico sin sacrificar interpretación económica.
+
+### 4.6 Diagnóstico de autocorrelación y propiedades del proceso generador de datos
+
+#### **4.6.1** Preparación: **matriz** **endógena**/**exógena** y **manejo** de NA
+
+```{r}
+df_varx <- base_modelo %>%
+  transmute(
+    fecha = as.Date(fecha),
+    inflacion_anual,
+    TRM_log,
+    ise_dae_log,
+    DTF_nivel,
+    us_inflacion,
+    brent_log_12
+  ) %>%
+  arrange(fecha)
+
+# Muestra común (complete-case)
+df_varx_cc <- df_varx %>% drop_na()
+
+# Endógenas y exógenas
+Y_cc <- df_varx_cc %>%
+  dplyr::select(inflacion_anual, TRM_log, ise_dae_log, DTF_nivel)
+
+X_cc <- df_varx_cc %>%
+  dplyr::select(us_inflacion, brent_log_12)
+```
+
+#### 4.6.2 Selección del número de rezagos p
+
+```{r}
+#| label: varx_lag_selection
+#| echo: true
+#| message: false
+#| warning: false
+#| include: false
+
+
+
+Y_mat <- as.matrix(Y_cc)
+X_mat <- as.matrix(X_cc)
+
+lag_max <- 12  # mensual
+
+sel <- VARselect(
+  y = Y_mat,
+  lag.max = lag_max,
+  type = "const",
+  exogen = X_mat
+)
+
+sel$selection
+```
+
+La selección del número óptimo de rezagos se realizó mediante los criterios de información de Akaike (AIC), Hannan-Quinn (HQ), Schwarz (SC) y el error de predicción final (FPE), considerando un máximo de 12 rezagos acorde con la frecuencia mensual de las series.
+
+La elección de un rezago máximo de 12 permite capturar adecuadamente la dinámica intra-anual y los posibles efectos retardados de los choques macroeconómicos, especialmente relevantes en variables como la inflación, el tipo de cambio y la actividad económica.
+
+#### **4.6.3 Estimación del VARX(p)**
+
+```{r}
+#| label: varx_estimation
+#| echo: true
+#| message: false
+#| warning: false
+#| include: false
+
+# Convertir a matrices numéricas (requisito técnico del paquete vars)
+Y_mat <- as.matrix(Y_cc)
+X_mat <- as.matrix(X_cc)
+
+# Verificación técnica (buena práctica en trabajos académicos)
+str(Y_mat)
+str(X_mat)
+
+# Estimación del VARX(2)
+varx_2 <- vars::VAR(
+  y = Y_mat,
+  p = 2,
+  type = "const",
+  exogen = X_mat
+)
+
+summary(varx_2)
+# Comprobación de valores faltantes
+colSums(is.na(Y_mat))
+colSums(is.na(X_mat))
+```
+
+La estimación del modelo VARX(2) se realizó considerando como variables endógenas la inflación de Colombia, la TRM, el ISE y la tasa DTF, e incorporando como variables exógenas la inflación de Estados Unidos y el precio internacional del petróleo Brent.
+
+En la ecuación de inflación, los resultados evidencian una marcada persistencia inflacionaria, reflejada en la alta significancia del primer rezago de la inflación, lo cual es consistente con la presencia de inercia inflacionaria documentada en economías abiertas y emergentes.
+
+Asimismo, el rezago del ISE resulta estadísticamente significativo y con el signo esperado, lo que sugiere que las condiciones del ciclo económico y la dinámica de la actividad productiva ejercen presiones relevantes sobre la formación de precios, en línea con la literatura de curva de Phillips ampliada.
+
+Adicionalmente, la tasa de interés (DTF) y la inflación externa muestran efectos significativos sobre la inflación doméstica, lo que respalda la importancia de los canales monetarios y del entorno internacional en la dinámica inflacionaria de una economía pequeña y abierta como la colombiana.
+
+En conjunto, los resultados reflejan una dinámica inflacionaria caracterizada por alta persistencia, sensibilidad al ciclo económico interno y exposición a factores externos.
+
+A nivel sistémico, las ecuaciones restantes muestran alta persistencia en la TRM y en la tasa DTF, así como una dinámica autoregresiva significativa en el ISE, lo que es coherente con la naturaleza macroeconómica de estas variables.
+
+#### 4.6.4 Estabilidad del sistema (condición VAR)
+
+En esta sección se evalúa la estabilidad dinámica del VARX(2). La condición de estabilidad (o de estacionariedad del VAR en forma compañera) exige que \*\*todas\*\* las raíces/eigenvalues del polinomio característico tengan módulo estrictamente menor que uno, esto es, 
+$$
+|\lambda_i|<1 \quad \forall i.
+$$
+Intuitivamente, esta condición garantiza que los choques al sistema no generen trayectorias explosivas y que los efectos dinámicos se amortigüen con el tiempo, a pesar de la interacción de múltiples fuerzas endógenas en el sistema.
+
+En la estimación del VARX(2) se observa que el mayor módulo es $\max|\lambda|=0.926<1$, lo cual sugiere estabilidad. No obstante, se verifica formalmente esta condición y se complementa con una representación gráfica en el plano complejo.
+
+
+\
+
+```{r}
+#| label: varx_roots_unit_circle
+#| echo: false
+
+
+# -----------------------------
+# Raíces del VAR (plano complejo)
+# -----------------------------
+A <- vars::Acoef(varx_2)  # lista de matrices A1,...,Ap
+k <- nrow(A[[1]])
+p <- length(A)
+
+# Companion matrix: (k*p) x (k*p)
+comp <- matrix(0, nrow = k*p, ncol = k*p)
+
+# Bloque superior: [A1 A2 ... Ap]
+comp[1:k, 1:(k*p)] <- do.call(cbind, A)
+
+# Subdiagonal identidad: desplaza estados
+if (p > 1) {
+  comp[(k+1):(k*p), 1:(k*(p-1))] <- diag(k*(p-1))
+}
+
+# Eigenvalues (raíces)
+eig <- eigen(comp)$values
+
+# Verificación numérica
+max_mod <- max(Mod(eig))
+max_mod
+all(Mod(eig) < 1)
+
+# -----------------------------
+# Gráfico en el plano complejo
+# -----------------------------
+plot(Re(eig), Im(eig),
+     xlab = "Parte real", ylab = "Parte imaginaria",
+     main = "Estabilidad VARX: Eigenvalues (Círculo unitario)",
+     pch = 19, xlim = c(-1.2, 1.2), ylim = c(-1.2, 1.2))
+
+# Círculo unitario
+theta <- seq(0, 2*pi, length.out = 400)
+lines(cos(theta), sin(theta), lty = 2)
+
+abline(h = 0, v = 0, lty = 3)
+
+# etiqueta con el módulo máximo
+text(-1.15, 1.1, labels = paste0("max |λ| = ", round(max_mod, 3)), adj = 0)
+```
+
+La estabilidad dinámica del modelo VARX(2) se evaluó mediante el análisis de las raíces del polinomio característico, representadas en el plano complejo. En este contexto, el eje horizontal corresponde a la parte real de los eigenvalues, mientras que el eje vertical representa la parte imaginaria, lo que permite identificar la posible presencia de raíces complejas asociadas a dinámicas oscilatorias.
+
+Los resultados muestran que todas las raíces se encuentran estrictamente dentro del círculo unitario, con un valor máximo de \|λ\| = 0.926. Este resultado satisface la condición de estabilidad del sistema VAR, la cual requiere que el módulo de todos los eigenvalues sea menor que uno.
+
+Asimismo, la presencia de raíces con pequeña componente imaginaria sugiere la existencia de ajustes dinámicos ligeramente oscilatorios pero amortiguados, lo cual es consistente con la naturaleza cíclica de las variables macroeconómicas. Sin embargo, dado que dichas raíces permanecen dentro del círculo unitario, estas oscilaciones no generan inestabilidad ni explosividad en el sistema.
+
+Desde una perspectiva económica, la cercanía de algunas raíces al valor unitario indica una elevada persistencia en la dinámica del sistema, particularmente en variables nominales como la inflación y la tasa de interés, fenómeno ampliamente documentado en economías abiertas y emergentes.
+
+En consecuencia, el modelo VARX estimado puede considerarse dinámicamente estable, lo que garantiza la validez de los análisis de impulso-respuesta, descomposición de varianza del error de pronóstico y ejercicios de predicción posteriores.
