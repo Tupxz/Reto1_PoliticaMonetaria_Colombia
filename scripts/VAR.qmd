@@ -1351,10 +1351,160 @@ text(-1.15, 1.1, labels = paste0("max |λ| = ", round(max_mod, 3)), adj = 0)
 
 La estabilidad dinámica del modelo VARX(2) se evaluó mediante el análisis de las raíces del polinomio característico, representadas en el plano complejo. En este contexto, el eje horizontal corresponde a la parte real de los eigenvalues, mientras que el eje vertical representa la parte imaginaria, lo que permite identificar la posible presencia de raíces complejas asociadas a dinámicas oscilatorias.
 
-Los resultados muestran que todas las raíces se encuentran estrictamente dentro del círculo unitario, con un valor máximo de \|λ\| = 0.926. Este resultado satisface la condición de estabilidad del sistema VAR, la cual requiere que el módulo de todos los eigenvalues sea menor que uno.
+Los resultados muestran que todas las raíces se encuentran estrictamente dentro del círculo unitario, con un valor máximo de \\(\|\\lambda\|=0.926\\). Este resultado satisface la condición de estabilidad del sistema VAR, la cual requiere que el módulo de todos los eigenvalues sea menor que uno.
 
-Asimismo, la presencia de raíces con pequeña componente imaginaria sugiere la existencia de ajustes dinámicos ligeramente oscilatorios pero amortiguados, lo cual es consistente con la naturaleza cíclica de las variables macroeconómicas. Sin embargo, dado que dichas raíces permanecen dentro del círculo unitario, estas oscilaciones no generan inestabilidad ni explosividad en el sistema.
+Asimismo, la presencia de raíces con componente imaginaria distinta de cero sugiere la existencia de ajustes dinámicos \*\*oscilatorios pero amortiguados\*\*, lo cual es consistente con la naturaleza cíclica de las variables macroeconómicas. Sin embargo, dado que dichas raíces permanecen dentro del círculo unitario, estas oscilaciones no implican inestabilidad ni explosividad del sistema.
 
-Desde una perspectiva económica, la cercanía de algunas raíces al valor unitario indica una elevada persistencia en la dinámica del sistema, particularmente en variables nominales como la inflación y la tasa de interés, fenómeno ampliamente documentado en economías abiertas y emergentes.
+Desde una perspectiva económica, la cercanía de algunas raíces al valor unitario indica una elevada \*\*persistencia\*\* en la dinámica del sistema, particularmente en variables nominales como la inflación y la tasa de interés. En consecuencia, el modelo VARX estimado puede considerarse dinámicamente estable, lo que garantiza la validez de los análisis de impulso–respuesta (IRF), descomposición de varianza del error de pronóstico (FEVD) y ejercicios de predicción posteriores.
 
-En consecuencia, el modelo VARX estimado puede considerarse dinámicamente estable, lo que garantiza la validez de los análisis de impulso-respuesta, descomposición de varianza del error de pronóstico y ejercicios de predicción posteriores.
+#### 4.6.5 Diagnóstico de la autocorrelación residual
+
+```{r}
+#| label: varx_serial_correlation
+
+
+# ============================================================
+# 4.6.5 Diagnóstico de autocorrelación residual (VARX)
+# (i) Portmanteau (Ljung-Box multivariado)
+# (ii) LM multivariado tipo Breusch-Godfrey
+# ============================================================
+
+h <- 12  # orden máximo de autocorrelación a evaluar (mensual: hasta 1 año)
+
+# (i) Portmanteau (Ljung-Box)
+serial_pt <- serial.test(
+  varx_2,
+  lags.pt = h,
+  type = "PT.asymptotic"
+)
+
+# (ii) LM multivariado (Breusch-Godfrey)
+serial_lm <- serial.test(
+  varx_2,
+  lags.bg = h,
+  type = "BG"
+)
+
+serial_pt
+serial_lm
+```
+
+Con el fin de evaluar la correcta especificación dinámica del VARX(2), se aplicaron pruebas de autocorrelación residual a nivel multivariado: el test de Portmanteau (Ljung–Box) y el test LM tipo Breusch–Godfrey.
+
+En ambos casos, la hipótesis nula establece la ausencia de autocorrelación serial conjunta en los residuos hasta el orden (h = 12), consistente con la frecuencia mensual de las series y con un horizonte anual de dependencia temporal potencial.
+
+Aunque la selección por criterios de información favorece un VARX(2), las pruebas de autocorrelación residual multivariada (Portmanteau y LM) rechazan la hipótesis nula de residuos no autocorrelacionados. Dado que estos tests son altamente sensibles en sistemas multivariados y con horizonte de 12 rezagos, se complementa el análisis con diagnóstico por ecuación (ACF/Ljung–Box) para identificar si la dependencia serial proviene de una ecuación particular o de estacionalidad residual. En función de este diagnóstico, se evaluará la inclusión de determinísticos (dummies mensuales y/o dummies de episodios) manteniendo la estructura VARX(2) seleccionada por parsimonia.
+
+**4.6.5.1 Diagnóstico por ecuación (ACF + Ljung–Box univariado)**
+
+```{r}
+#| label: varx_residuals
+#| echo: true
+#| message: false
+#| warning: false
+#| include: false
+
+# Residuos del VARX(2)
+res_varx <- residuals(varx_2)
+```
+
+```{r}
+#| label: acf_residuals_inflacion
+#| echo: true
+#| message: false
+#| warning: false
+
+acf(
+  res_varx[, "inflacion_anual"],
+  lag.max = 24,
+  main = "ACF de los residuos: Inflación Colombia",
+  ylab = "Autocorrelación",
+  xlab = "Rezagos"
+)
+abline(h = 0, col = "red", lty = 2)
+
+pacf(
+  res_varx[, "inflacion_anual"],
+  lag.max = 24,
+  main = "PACF de los residuos: Inflación Colombia"
+)
+abline(h = 0, col = "red", lty = 2)
+```
+
+```{r}
+#| label: acf_residuals_trm
+#| echo: true
+#| message: false
+#| warning: false
+
+acf(
+  res_varx[, "TRM_log"],
+  lag.max = 24,
+  main = "ACF de los residuos: TRM (log 12)",
+  ylab = "Autocorrelación",
+  xlab = "Rezagos"
+)
+abline(h = 0, col = "red", lty = 2)
+
+pacf(
+  res_varx[, "TRM_log"],
+  lag.max = 24,
+  main = "PACF de los residuos: TRM (log 12)"
+)
+abline(h = 0, col = "red", lty = 2)
+```
+
+```{r}
+#| label: acf_residuals_ise
+
+#| echo: true
+#| message: false
+#| warning: false
+
+acf(
+  res_varx[, "ise_dae_log"],
+  lag.max = 24,
+  main = "ACF de los residuos: ISE (log 12, DAE)",
+  ylab = "Autocorrelación",
+  xlab = "Rezagos"
+)
+abline(h = 0, col = "red", lty = 2)
+
+pacf(
+  res_varx[, "ise_dae_log"],
+  lag.max = 24,
+  main = "PACF de los residuos: ISE (log 12, DAE)"
+)
+abline(h = 0, col = "red", lty = 2)
+```
+
+```{r}
+#| label: acf_residuals_dtf
+#| echo: true
+#| message: false
+#| warning: false
+
+acf(
+  res_varx[, "DTF_nivel"],
+  lag.max = 24,
+  main = "ACF de los residuos: DTF (nivel)",
+  ylab = "Autocorrelación",
+  xlab = "Rezagos"
+)
+abline(h = 0, col = "red", lty = 2)
+
+pacf(
+  res_varx[, "DTF_nivel"],
+  lag.max = 24,
+  main = "PACF de los residuos: DTF (nivel) "
+)
+abline(h = 0, col = "red", lty = 2)
+
+```
+
+#### 
+
+
+
+
+
