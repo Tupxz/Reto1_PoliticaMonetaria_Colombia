@@ -1178,7 +1178,6 @@ Adicionalmente, a diferencia de variables de precios o actividad económica, la 
 #### **4.6.1** Preparación: **matriz** **endógena**/**exógena** y **manejo** de NA
 
 ```{r}
-#| include: false
 df_varx <- base_modelo %>%
   transmute(
     fecha = as.Date(fecha),
@@ -1201,8 +1200,6 @@ Y_cc <- df_varx_cc %>%
 X_cc <- df_varx_cc %>%
   dplyr::select(us_inflacion, brent_log_12)
 ```
-
-Se creó una matriz para las variables exógenas y otra para las endogenas
 
 #### 4.6.2 Selección del número de rezagos p
 
@@ -1349,7 +1346,6 @@ Desde una perspectiva económica, la cercanía de algunas raíces al valor unita
 
 ```{r}
 #| label: varx_serial_correlation
-#| echo: false
 
 
 # ============================================================
@@ -1388,9 +1384,10 @@ Aunque la selección por criterios de información favorece un VARX(2), las prue
 
 ```{r}
 #| label: varx_residuals
-#| echo: false
+#| echo: true
 #| message: false
 #| warning: false
+#| include: false
 
 # Residuos del VARX(2)
 res_varx <- residuals(varx_2)
@@ -1398,7 +1395,7 @@ res_varx <- residuals(varx_2)
 
 ```{r}
 #| label: acf_residuals_inflacion
-#| echo: false
+#| echo: true
 #| message: false
 #| warning: false
 
@@ -1421,7 +1418,7 @@ abline(h = 0, col = "red", lty = 2)
 
 ```{r}
 #| label: acf_residuals_trm
-#| echo: false
+#| echo: true
 #| message: false
 #| warning: false
 
@@ -1445,7 +1442,7 @@ abline(h = 0, col = "red", lty = 2)
 ```{r}
 #| label: acf_residuals_ise
 
-#| echo: false
+#| echo: true
 #| message: false
 #| warning: false
 
@@ -1471,7 +1468,7 @@ abline(h = 0, col = "red", lty = 2)
 
 ```{r}
 #| label: acf_residuals_dtf
-#| echo: false
+#| echo: true
 #| message: false
 #| warning: false
 
@@ -1908,8 +1905,8 @@ fechas_test <- test$fecha
 rmse_varx <- sqrt(mean((infl_real - infl_fc)^2, na.rm = TRUE))
 mae_varx  <- mean(abs(infl_real - infl_fc), na.rm = TRUE)
 
-cat("VARX RMSE: ",rmse_varx)
-cat("VARX RMSE: ",mae_varx)
+rmse_varx
+mae_varx
 ```
 
 ### 5.3 Modelos de referencia (benchmarks)
@@ -1923,9 +1920,10 @@ Estos benchmarks permiten evaluar si el enfoque multivariado aporta mejoras pred
 
 ```{r}
 #| label: forecast_benchmarks
-#| echo: false
+#| echo: true
 #| message: false
 #| warning: false
+#| include: false
 
 
 # Serie de inflación train/test
@@ -1951,10 +1949,8 @@ fc_naive <- rep(last_train, length(infl_test))
 rmse_naive <- sqrt(mean((infl_test - fc_naive)^2, na.rm = TRUE))
 mae_naive  <- mean(abs(infl_test - fc_naive), na.rm = TRUE)
 
-cat("ARIMA RMSE: ",rmse_arima)
-cat("ARIMA MAE: ", mae_arima)
-cat("NAIVE RMSE: ",rmse_naive)
-cat("NAIVE RMSE: ", mae_naive)
+rmse_arima; mae_arima
+rmse_naive; mae_naive
 ```
 
 ### 5.4 Resultados: comparación con modelos de referencia
@@ -1975,9 +1971,10 @@ Este diseño permite evaluar no solo la precisión promedio del modelo, sino tam
 
 ```{r}
 #| label: forecast_expanding_varx
-#| echo: false
+#| echo: true
 #| message: false
 #| warning: false
+#| include: false
 
 
 # Usamos df ya limpio (sin NA) y con train/test ya definidos
@@ -2035,6 +2032,7 @@ res_varx <- tibble(
 
 ```{r}
 #| label: forecast_expanding_benchmarks
+#| echo: true
 #| message: false
 #| warning: false
 #| include: false
@@ -2079,7 +2077,7 @@ res_naive <- tibble(
 
 ```{r}
 #| label: forecast_expanding_table
-#| echo: false
+#| echo: true
 #| message: false
 #| warning: false
 
@@ -2145,56 +2143,6 @@ Una vez validado el desempeño fuera de muestra mediante ventana creciente, se c
 En consecuencia, las proyecciones deben interpretarse como **pronósticos condicionales** al escenario implícito generado por el Forecast-X.
 
 ```{r}
-#| include: false
-
-#| label: build_df_future_infl
-#| echo: false
-#| message: false
-#| warning: false
-
-library(dplyr)
-library(lubridate)
-library(vars)
-library(forecast)
-library(tibble)
-
-df <- df_varx %>%
-  dplyr::mutate(fecha = as.Date(fecha)) %>%
-  dplyr::arrange(fecha) %>%
-  tidyr::drop_na()
-
-last_date <- max(df$fecha)
-target_end <- as.Date("2026-07-01")
-future_dates <- seq(from = last_date %m+% months(1), to = target_end, by = "month")
-h <- length(future_dates)
-
-Y_full <- as.matrix(df %>% dplyr::select(inflacion_anual, TRM_log, ise_dae_log, DTF_nivel))
-X_full <- as.matrix(df %>% dplyr::select(us_inflacion, brent_log_12))
-
-p <- 2
-varx_full <- vars::VAR(y = Y_full, p = p, type = "const", exogen = X_full)
-
-fit_us <- forecast::auto.arima(df$us_inflacion)
-fit_br <- forecast::auto.arima(df$brent_log_12)
-
-X_future <- cbind(
-  us_inflacion = as.numeric(forecast::forecast(fit_us, h = h)$mean),
-  brent_log_12 = as.numeric(forecast::forecast(fit_br, h = h)$mean)
-)
-
-fc_varx <- predict(varx_full, n.ahead = h, dumvar = X_future)
-
-df_future_infl <- tibble::tibble(
-  fecha = future_dates,
-  inflacion_pred = fc_varx$fcst$inflacion_anual[, "fcst"],
-  inflacion_lo   = fc_varx$fcst$inflacion_anual[, "lower"],
-  inflacion_hi   = fc_varx$fcst$inflacion_anual[, "upper"]
-)
-```
-
-```{r}
-#| echo: false
-
 # Gráfico: histórico + forecast + banda meta de inflación (2%-4%)
 
 p_forecast <- ggplot() +
@@ -2266,30 +2214,5 @@ En el escenario base, el pronóstico sugiere una continuidad del proceso desinfl
 En términos de política monetaria, el pronóstico central se aproxima progresivamente al rango meta, aunque la convergencia depende de la trayectoria futura de los determinantes externos (inflación de EE.UU. y precios del petróleo) y de la respuesta endógena del sistema (TRM, actividad económica y condiciones monetarias). Por ello, este ejercicio debe interpretarse como un pronóstico condicional a la información disponible y al escenario implícito en la proyección de las variables exógenas.
 
 ```{r}
-#| label: tabla_forecast_feb_jul_2026
-#| echo: false
-#| message: false
-#| warning: false
 
-df_future_infl %>%
-  dplyr::mutate(across(dplyr::where(is.numeric), ~ round(.x, 3))) %>%
-  knitr::kable(
-    caption = "Pronóstico condicional de inflación anual (VARX, Forecast-X), 2025-12 a 2026-07"
-  )
 ```
-
-## 6. Conclusiones
-
-Este trabajo estimó un modelo VARX(2) mensual para Colombia, con inflación anual como variable de interés, incorporando como endógenas la inflación, la TRM, el ISE (proxy de actividad) y la DTF (condiciones monetarias), y como exógenas la inflación de EE.UU. y el precio del petróleo Brent. La especificación VARX permite separar explícitamente la influencia de choques externos y reduce el riesgo de atribuir a la dinámica interna lo que en realidad proviene del entorno internacional.
-
-Los resultados dinámicos sugieren que la inflación en Colombia presenta alta persistencia, y que los choques en variables financieras y reales se transmiten con rezagos relevantes. En particular, las funciones impulso–respuesta indican que perturbaciones en TRM, actividad (ISE) y condiciones monetarias (DTF) se asocian con respuestas de la inflación que se acumulan en los meses siguientes y se disipan gradualmente, coherente con mecanismos de pass-through cambiario, demanda agregada y transmisión monetaria. La descomposición de varianza del error de pronóstico muestra que, aunque en el muy corto plazo la inflación es explicada principalmente por sus propios choques, a horizontes más largos aumenta la importancia relativa de TRM e ISE (y en menor medida DTF), lo que respalda la relevancia de estos canales para el comportamiento inflacionario.
-
-En términos predictivos, la validación fuera de muestra con ventana creciente muestra que el desempeño del VARX depende del horizonte: mientras que en horizontes muy cortos los modelos univariados pueden ser competitivos, a horizontes de 3, 6 y 12 meses el VARX exhibe mejoras sistemáticas (en RMSE y MAE), lo cual sugiere que la información macroeconómica adicional aporta capacidad predictiva cuando el horizonte se amplía. Bajo el enfoque Forecast-X para las exógenas, el pronóstico hacia adelante (2025-12 a 2026-07) sugiere una trayectoria de desinflación gradual, con convergencia hacia el rango meta de 2%–4% en el escenario base.
-
-Finalmente, los resultados deben interpretarse con cautela. El modelo captura correlaciones dinámicas y es útil para pronóstico condicional, pero no constituye por sí mismo una identificación causal estructural; adicionalmente, los diagnósticos residuales sugieren la presencia de heterocedasticidad y no normalidad, patrones frecuentes en macro-finanzas. Como extensiones naturales, se propone evaluar escenarios alternativos para las exógenas (petróleo alto/bajo e inflación externa), considerar identificaciones estructurales (SVAR/SVARX) y explorar modelos con volatilidad condicional (VAR-GARCH) para robustecer inferencias y bandas de incertidumbre.
-
-### 6.1 Limitaciones y extensiones
-
--   Pronóstico condicional: el ejercicio depende de la trayectoria proyectada de exógenas (Forecast-X).
--   Diagnóstico residual: heterocedasticidad/no normalidad pueden afectar inferencia estándar; se prioriza interpretación económica e incertidumbre por bootstrap en IRFs.
--   Posibles extensiones: SVARX (identificación), VAR-GARCH, escenarios alternativos y validación adicional con ventanas móviles.

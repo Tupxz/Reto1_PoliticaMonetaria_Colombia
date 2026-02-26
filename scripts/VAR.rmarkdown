@@ -2293,3 +2293,4 @@ Finalmente, los resultados deben interpretarse con cautela. El modelo captura co
 -   Pronóstico condicional: el ejercicio depende de la trayectoria proyectada de exógenas (Forecast-X).
 -   Diagnóstico residual: heterocedasticidad/no normalidad pueden afectar inferencia estándar; se prioriza interpretación económica e incertidumbre por bootstrap en IRFs.
 -   Posibles extensiones: SVARX (identificación), VAR-GARCH, escenarios alternativos y validación adicional con ventanas móviles.
+
