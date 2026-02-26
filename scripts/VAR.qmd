@@ -802,6 +802,96 @@ Adicionalmente, se incorpora un conjunto de variables exógenas (VARX) para repr
 
 En conjunto, asegurar la estacionariedad (o, en su defecto, aplicar transformaciones consistentes con el orden de integración de las series) es un paso necesario para obtener inferencia válida, interpretar adecuadamente la transmisión dinámica entre variables y construir pronósticos creíbles de inflación, variable central para el análisis macroeconómico y la evaluación de política monetaria en Colombia.
 
+#### 
+
+
+
+4.1.1 Especificación del modelo VARX
+
+Con el fin de analizar la transmisión dinámica de la política monetaria sobre la inflación en Colombia, se estima un modelo autorregresivo vectorial con variables exógenas (VARX) en forma reducida. Este tipo de modelo permite capturar interrelaciones dinámicas y simultáneas entre variables macroeconómicas, permitiendo que cada variable dependa de sus propios rezagos y de los rezagos del resto del sistema.
+
+La especificación general del modelo se define como:
+
+$$
+\mathbf{y}_t = \mathbf{c} + \mathbf{A}_1 \mathbf{y}_{t-1} + \mathbf{A}_2 \mathbf{y}_{t-2} + \mathbf{B}\mathbf{x}_t + \mathbf{u}_t, \quad t = 1, \dots, Tdonde:
+$$
+
+\- $\mathbf{y}_t$ es el vector de variables endógenas  
+
+\- $\mathbf{x}_t$ es el vector de variables exógenas  
+
+\- $\mathbf{c}$ es el vector de constantes  
+
+\- $\mathbf{A}_1, \mathbf{A}_2$ son matrices de coeficientes autorregresivos  
+
+\- $\mathbf{B}$ es la matriz de coeficientes asociada a las variables exógenas  
+
+\- $\mathbf{u}_t$ es el vector de errores o innovaciones del modelo  
+
+Se asume que:
+
+$$
+\mathbb{E}(\mathbf{u}_t)=0, \quad \mathbb{E}(\mathbf{u}_t \mathbf{u}_t') = \Sigma_u
+$$
+
+y que los errores no presentan autocorrelación serial.
+
+####  4.1.2 Variables endógenas (dependientes dentro del sistema)
+
+El vector de variables endógenas se define como:
+
+$$
+\mathbf{y}_t =\begin{bmatrix}\pi_t \\s_t \\g_t \\i_t\end{bmatrix}
+$$
+
+donde:
+
+\- $\pi_t$ : Inflación anual, medida como \$\\Delta\_{12}\\log(IPC_t)\\times 100\$
+
+\- $s_t$ : Variación logarítmica interanual de la TRM (\$\\Delta\_{12}\\log(TRM_t)\\times 100\$)
+
+\- $g_t$ : Crecimiento anual del ISE desestacionalizado (\$\\Delta\_{12}\\log(ISE_t)\\times 100\$)
+
+\- $i_t$ : Tasa de interés DTF en nivel (proxy de la postura de política monetaria)
+
+En un modelo VAR, todas las variables endógenas son simultáneamente dependientes, por lo que no existe una única variable dependiente tradicional, sino un sistema de ecuaciones dinámicas interrelacionadas.
+
+#### 4.1.3 Variables exógenas
+
+El vector de variables exógenas se especifica como:
+
+$$
+\mathbf{x}_t =
+\begin{bmatrix}
+\pi_t^{US} \\
+p_t^{B}
+\end{bmatrix}
+$$
+
+donde:
+
+\- $\pi_t^{US}$: Inflación anual de Estados Unidos (CPI, variación logarítmica interanual)
+
+\- $p_t^{B}$ : Variación logarítmica interanual del precio del petróleo Brent
+
+Estas variables se tratan como exógenas bajo el supuesto de que Colombia es una economía pequeña y abierta, que no influye en la determinación de la inflación estadounidense ni en los precios internacionales del petróleo.
+
+####  4.1.4 Interpretación del término de error
+
+El término de error $\mathbf{u}_t$ representa shocks no anticipados que afectan al sistema macroeconómico y que no son explicados por los rezagos de las variables endógenas ni por los factores externos incluidos en el modelo. Estos shocks pueden interpretarse como perturbaciones monetarias, cambiarias, reales o externas no observadas.
+
+Dado que el modelo se estima en forma reducida, los residuos no corresponden directamente a shocks estructurales, por lo que el análisis dinámico posterior se realiza mediante funciones impulso–respuesta y descomposición de varianza.
+
+#### 4.1.5 Justificación de la especificación del modelo
+
+La estimación del VARX se realiza utilizando variables en variación logarítmica interanual (para IPC, TRM, ISE y Brent) y la tasa de interés en nivel (DTF), por tres razones principales:
+
+1\. La inflación y las demás variables macroeconómicas presentan alta persistencia, por lo que la transformación interanual reduce la no estacionariedad sin perder interpretación económica.
+
+2\. La DTF, al ser una tasa de interés, posee una interpretación directa en niveles como indicador de la postura de política monetaria.
+
+3\. La literatura macroeconómica aplicada sugiere que los modelos VAR en niveles (con transformaciones adecuadas) son apropiados para analizar la transmisión de shocks y la dinámica inflacionaria, incluso en presencia de alta persistencia y posibles quiebres estructurales.
+
 ### 4.2 Análisis de dependencia temporal: correlogramas (ACF y PACF) - diagnostico estructural
 
 ```{r}
@@ -1161,7 +1251,7 @@ Se adopta la especificación con quiebre en intercepto y tendencia (model = “b
 #### 4.3.5 Tabla comparativa
 
 | **Serie (variable)** | **Transformación usada en el modelo** | **PP (p-value)** | **KPSS nivel (p-value)** | **KPSS tendencia (p-value)** | **ZA (t-stat)** | **ZA (break, posición)** | **Lectura preliminar (con base en p-values y críticos)** |
-|----|----|----|----|----|----|----|----|
+|---------|---------|---------|---------|---------|---------|---------|---------|
 | Inflación Colombia (`inflacion_anual`) | $\Delta_{12}\log(IPC)\times 100$ | 0.6953 | 0.01 | 0.01 | -3.5436 | 192 | PP **no** rechaza raíz unitaria; KPSS **rechaza** estacionariedad; ZA **no** rechaza a 10%/5% |
 | TRM (`TRM_log`) | $\Delta_{12}\log(TRM)\times 100$ | 0.04462 | 0.0715 | 0.01 | -3.9264 | 103 | PP **rechaza** raíz unitaria (5%); KPSS nivel **no** rechaza (débil); ZA **no** rechaza |
 | DTF (`DTF_nivel`) | Nivel (%) | 0.8074 | 0.01095 | 0.01 | -4.9422 | 193 | PP **no** rechaza raíz unitaria; KPSS **rechaza** estacionariedad; ZA **rechaza al 10%** (porque -4.94 \< -4.82) pero **no al 5%** |
@@ -1200,7 +1290,7 @@ Por su parte, la inflación de Colombia, la inflación de Estados Unidos y la TR
 En consecuencia, se adopta una especificación del modelo en tasas de crecimiento (Δ12 log) para las variables macroeconómicas, mientras que la tasa DTF se mantiene en nivel, dado su carácter de variable de política monetaria. Esta decisión permite garantizar la estabilidad del sistema dinámico y evitar problemas de regresión espuria en la estimación del VARX.
 
 | **Variable** | **Transformación final** | **Evidencia de estacionariedad** | **Decisión para VARX** |
-|----|----|----|----|
+|------------------|------------------|------------------|------------------|
 | Inflación COL | Δ12 log | Mixta (ADF/PP/KPSS) con alta persistencia | Endógena en tasas |
 | ISE (DAE) | Δ12 log | Estacionaria (PP y KPSS consistentes) | Endógena en tasas |
 | TRM | Δ12 log | Persistencia moderada, evidencia mixta | Endógena en tasas |
@@ -2321,6 +2411,17 @@ df_future_infl %>%
   knitr::kable(
     caption = "Pronóstico condicional de inflación anual (VARX, Forecast-X), 2025-12 a 2026-07"
   )
+```
+
+```{r}
+# Causalidad de Granger desde DTF hacia inflación
+vars::causality(varx_full, cause = "DTF_nivel")
+
+# TRM -> inflación
+vars::causality(varx_full, cause = "TRM_log")
+
+# ISE -> inflación
+vars::causality(varx_full, cause = "ise_dae_log")
 ```
 
 ## 6. Conclusiones
