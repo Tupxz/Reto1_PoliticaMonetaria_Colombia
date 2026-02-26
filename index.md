@@ -8,7 +8,10 @@ title: "Reto 1 – Haciendo Macroeconomía"
 **Curso:** Econometría II (EAFIT) – 2026-I
 
 ## Navegación
-- 📄 **Informe final (PDF):** [Abrir informe](./docs/reto/reto_limpio.pdf)
+- 📄 **Documentos
+- [Informe web (HTML)](./docs/reto/VAR.html)
+- [Informe en PDF](./docs/reto/VAR.pdf)
+- [Slides en PDF](./docs/slides/slides.pdf)
 - 📊 **Outputs (resultados por modelo):** [Entrar a outputs](./outputs/)
 - 💻 **Código (scripts):** [Ver scripts en GitHub](https://github.com/Tupxz/Reto1_PoliticaMonetaria_Colombia/tree/main/scripts)
 
