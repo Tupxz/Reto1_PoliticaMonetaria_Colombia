@@ -1,0 +1,315 @@
+\documentclass[spanish, 11pt]{beamer}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{amsmath, amssymb, amsfonts}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tikz}
+
+% Theme and colors
+\usetheme{Madrid}
+\usecolortheme{default}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{itemize items}[circle]
+\setbeamerfont{title}{size=\LARGE, series=\bfseries}
+\setbeamerfont{frametitle}{size=\Large, series=\bfseries}
+
+\definecolor{darkblue}{rgb}{0.1, 0.2, 0.4}
+\definecolor{lightblue}{rgb}{0.9, 0.94, 0.98}
+
+\setbeamercolor{structure}{fg=darkblue}
+\setbeamercolor{frametitle}{bg=lightblue, fg=darkblue}
+\setbeamercolor{itemize item}{fg=darkblue}
+
+\setbeamersize{text margin left=0.8cm, text margin right=0.8cm}
+
+\title{\textbf{Transmisión Dinámica de la Política Monetaria}}
+\subtitle{Inflación en Colombia: Análisis VARX(2) Mensual}
+\author{Santiago Tupaz \\ Moisés Quintero}
+\institute{Universidad EAFIT \\ Econometría II}
+\date{Febrero 2026}
+
+\begin{document}
+
+% Slide 1: Title
+\begin{frame}[plain]
+\titlepage
+\end{frame}
+
+% Slide 2: Motivation Context
+\begin{frame}{1. Motivación: El Problema Inflacionario en Colombia}
+\centering
+\vspace{-0.3cm}
+\includegraphics[width=0.95\textwidth, height=6cm]{../VAR/01_series_macroeconomicas_VAR.pdf}
+\vspace{-0.3cm}
+\small
+\textbf{Contexto:} Inflación paso de 13.1\% (jul-2022) $\rightarrow$ 4.1\% (nov-2025) tras política monetaria contractiva
+\end{frame}
+
+% Slide 3: Research Question
+\begin{frame}{2. Pregunta de Investigación y Objetivo}
+\large
+\vspace{0.5cm}
+\centering
+\textbf{¿Cómo se transmite la política monetaria a la inflación?}
+
+\vspace{0.3cm}
+\textbf{¿Cuáles son los canales? ¿Cuán efectiva es? ¿Cuáles son los rezagos?}
+
+\vspace{0.8cm}
+\normalsize
+\textbf{Objetivo:}
+\begin{itemize}
+  \item Cuantificar dinámicas de transmisión (IRF, FEVD)
+  \item Comparar importancia relativa de canales: cambiario, monetario, real, externo
+  \item Evaluar capacidad predictiva multivariada
+  \item Generar pronóstico condicional 2026
+\end{itemize}
+\end{frame}
+
+% Slide 4: Contribution
+\begin{frame}{3. Contribución: ¿Por qué VARX?}
+\normalsize
+\vspace{0.3cm}
+\textbf{Enfoque VARX(2) Multivariado}
+\begin{itemize}
+  \item Captura \textbf{interdependencias} entre inflación, tasa de cambio, actividad, tasas
+  \item Incorpora \textbf{shocks externos} (inflación US, petróleo) en forma explícita
+  \item Permite \textbf{análisis dinámico} de propagación de choques
+  \item Comparación rigurosa: VARX vs ARIMA vs Naive en validación OOS
+\end{itemize}
+
+\vspace{0.4cm}
+\textbf{Ventajas sobre univariados}
+\begin{itemize}
+  \item \textbf{Interpretabilidad económica:} Cada variable capta canal de transmisión
+  \item \textbf{Desempeño:} +47\% a +66\% mejor RMSE en horizonte mediano-largo (h $\geq$ 3m)
+  \item \textbf{Estructura:} Mensuales (vs ADL/ARDL en otras entregas)
+\end{itemize}
+\end{frame}
+
+% Slide 5: Literature Review
+\begin{frame}{4. Literatura: Transmisión Monetaria en Economías Abiertas}
+\normalsize
+\vspace{0.2cm}
+\textbf{Canales económicos (Sims 1980, Galí 1999, Stock-Watson 2003)}
+
+\begin{itemize}
+  \item \textbf{Cambiario:} Depreciación TRM $\rightarrow$ Pass-through importaciones $\rightarrow$ IPC $\uparrow$ (9-12m)
+  \item \textbf{Monetario:} DTF $\uparrow$ $\rightarrow$ Demanda $\downarrow$ $\rightarrow$ Brecha de producto $\rightarrow$ IPC $\downarrow$ (Phillips)
+  \item \textbf{Real:} Actividad (ISE) $\leftrightarrow$ Presiones inflacionarias (ciclo)
+  \item \textbf{Externo:} Inflación US, petróleo Brent $\rightarrow$ Shocks de oferta
+\end{itemize}
+
+\vspace{0.3cm}
+\textbf{Aplicación a Colombia:}
+\begin{itemize}
+  \item Economía pequeña y abierta: dólar relevante en precios tradables
+  \item Petróleo $\sim$40\% exportaciones: volatilidad commodity crítica
+  \item Rigideces nominales: rezagos estimables empíricamente (nuestro aporte)
+\end{itemize}
+\end{frame}
+
+% Slide 6: Data & Transformation
+\begin{frame}{5. Datos: Variables, Período, Transformaciones}
+\normalsize
+\vspace{0.3cm}
+\textbf{Variables Endógenas (4) — Fuentes: DANE, BanRep}
+\small
+\begin{tabular}{llc}
+\toprule
+\textbf{Variable} & \textbf{Transform.} & \textbf{Fuente} \\
+\midrule
+Inflación & $\Delta_{12}\log(\text{IPC})$ [\%] & DANE \\
+TRM & $\Delta_{12}\log(\text{TRM})$ [\%] & BanRep \\
+ISE & $\Delta_{12}\log(\text{ISE})$ [\%] & DANE \\
+DTF & Nivel [pp] & BanRep (CDT 90d) \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.2cm}
+\normalsize
+\textbf{Variables Exógenas (2)}
+\small
+\begin{tabular}{llc}
+\toprule
+\textbf{Variable} & \textbf{Transform.} & \textbf{Fuente} \\
+\midrule
+Inflación US & $\Delta_{12}\log(\text{CPI-US})$ [\%] & FRED \\
+Brent & $\Delta_{12}\log(\text{Brent})$ [\%] & FRED \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.2cm}
+\normalsize
+\textbf{Período:} Enero 2006 — Noviembre 2025 (240 obs. mensuales)
+\begin{itemize}
+  \item \textbf{Estimación:} 2006-01 a 2022-12 (204 obs.)
+  \item \textbf{Validación OOS:} 2023-01 a 2025-11 (36 obs.)
+  \item Cubre: 2008, 2020, 2021-23, 2023-25
+\end{itemize}
+\end{frame}
+
+% Slide 7: Lag Selection & Stability
+\begin{frame}{6. Diagnósticos Econométricos: Rezagos y Estabilidad}
+\centering
+\includegraphics[width=0.95\textwidth, height=3.2cm]{../VAR/05_raices_varx_circulo_unitario.pdf}
+\vspace{-0.3cm}
+\small
+\textbf{Selección de p:} AIC, HQ, SC, FPE $\rightarrow$ \textbf{p = 2} (dinámicas de 2 meses)
+
+\vspace{0.2cm}
+\textbf{Estabilidad:} $|\lambda|_{\max} = 0.926 < 1$ \checkmark~Sistema dinámicamente estable
+
+\vspace{0.2cm}
+\textbf{Diagnósticos residuales:} Autocorrelación presente (Ljung-Box), ARCH detectado
+$\rightarrow$ IRF con \textbf{bootstrap 95\%} (2000 réplicas), no Gaussiano
+\end{frame}
+
+% Slide 8: Model Specification
+\begin{frame}{7. Especificación del Modelo VARX(2)}
+\normalsize
+\vspace{0.2cm}
+\textbf{Forma Intuitiva}
+\begin{align*}
+\mathbf{y}_t &= \mathbf{c} + \mathbf{A}_1 \mathbf{y}_{t-1} + \mathbf{A}_2 \mathbf{y}_{t-2} + \mathbf{B} \mathbf{x}_t + \mathbf{u}_t
+\end{align*}
+
+\vspace{0.1cm}
+\small
+Donde $\mathbf{y}_t = (\pi_t, \Delta\log\text{TRM}_t, \Delta\log\text{ISE}_t, \text{DTF}_t)'$ y $\mathbf{x}_t = (\Delta\log\text{CPI-US}_t, \Delta\log\text{Brent}_t)'$
+
+\vspace{0.3cm}
+\normalsize
+\textbf{Insight Económico:}
+\begin{itemize}
+  \item Inflación responde a: pasado propio, TRM pasada, ISE pasada, DTF pasada
+  \item Cada variable es driver de política / actividad / tipo de cambio
+  \item TRM y ISE capturan canales reales; DTF es instrumento de política
+  \item \textbf{Exógenas no diferenciadas:} Shocks externos son datos para decisiones
+\end{itemize}
+\end{frame}
+
+% Slide 9: IRF Results
+\begin{frame}{8. Resultados: Funciones Impulso-Respuesta Bootstrap}
+\centering
+\includegraphics[width=0.95\textwidth, height=6cm]{../VAR/08_irf_bootstrap_inflacion.pdf}
+\vspace{-0.3cm}
+\small
+\textbf{Picos (meses):} TRM $\rightarrow$ Inflación (8-12m), ISE $\rightarrow$ Inflación (8-11m), DTF $\rightarrow$ Inflación (5-7m)
+
+\textbf{Interpretación:} Rezagos largos indican rigideces, pass-through gradual, expectativas ancladas
+\end{frame}
+
+% Slide 10: FEVD Results
+\begin{frame}{8. Resultados: Descomposición de Varianza del Error (FEVD - 24m)}
+\normalsize
+\vspace{0.2cm}
+\centering
+\small
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Horizonte} & \textbf{1m} & \textbf{3m} & \textbf{6m} & \textbf{12m} & \textbf{24m} \\
+\midrule
+\textbf{Inflación prop} & 100\% & 85\% & 62\% & 45\% & 34\% \\
+\textbf{TRM} & 0\% & 9\% & 20\% & 31\% & 39\% \\
+\textbf{ISE} & 0\% & 5\% & 15\% & 21\% & 25\% \\
+\textbf{DTF} & 0\% & 1\% & 2\% & 2\% & 3\% \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.3cm}
+\normalsize
+\textbf{Hallazgos clave:}
+\begin{itemize}
+  \item \textbf{Corto plazo (h$\leq$3m):} Persistencia domina; choques externos aún no se propagan
+  \item \textbf{Mediano-largo (h$\geq$12m):} TRM + ISE explican 64\% de varianza
+  \item \textbf{DTF débil (3\%):} Transmisión de tasas limitada en este horizonte
+  \item \textbf{Economía abierta:} Shocks reales y cambiarios más relevantes que monetario
+\end{itemize}
+\end{frame}
+
+% Slide 11: Forecast Validation
+\begin{frame}{9. Validación Predictiva: Expanding Window RMSE}
+\normalsize
+\centering
+\small
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Horizonte} & \textbf{VARX} & \textbf{ARIMA} & \textbf{Naive} & \textbf{Ganancia VARX} \\
+\midrule
+\textbf{h=1 mes} & 0.82 & 0.71 & 2.10 & -15\% (ARIMA mejor) \\
+\textbf{h=3 meses} & 0.85 & 1.61 & 3.20 & \textbf{+47\%} vs ARIMA \\
+\textbf{h=6 meses} & 1.25 & 3.53 & 5.10 & \textbf{+65\%} vs ARIMA \\
+\textbf{h=12 meses} & 2.10 & 6.20 & 7.85 & \textbf{+66\%} vs ARIMA \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.3cm}
+\normalsize
+\textbf{Conclusión:}
+\begin{itemize}
+  \item \textbf{Mediano plazo (h$\geq$3m):} VARX domina ampliamente
+  \item \textbf{Corto plazo (h=1m):} ARIMA competitivo (persistencia pura suficiente)
+  \item \textbf{Implicación:} Información macroeconómica vale para pronósticos $\geq$ 3 meses
+\end{itemize}
+\end{frame}
+
+% Slide 12: Forecast 2026
+\begin{frame}{9. Pronóstico 2026: Escenario Base Forecast-X}
+\centering
+\includegraphics[width=0.95\textwidth, height=5.8cm]{../VAR/09_forecast_inflacion_varx_banda_meta.pdf}
+\vspace{-0.3cm}
+\small
+\textbf{Pronóstico:} Desinflación gradual (4.1\% nov-2025 $\rightarrow$ 3.3\% jul-2026), compatible con meta BanRep (3\%$\pm$1\%)
+
+\textbf{Bandas amplias:} Volatilidad de inflación US y petróleo transmitidas al pronóstico
+\end{frame}
+
+% Slide 13: Key Takeaways
+\begin{frame}{10. Hallazgos Principales}
+\normalsize
+\vspace{0.3cm}
+\begin{enumerate}
+  \item \textbf{Transmisión heterogénea:} TRM (cambiario) e ISE (real) más persistentes que DTF (monetario)
+  \vspace{0.15cm}
+  \item \textbf{Rezagos largos:} 8-12 meses hasta pico de efecto $\rightarrow$ Requiere paciencia de política
+  \vspace{0.15cm}
+  \item \textbf{FEVD dominada por reales:} TRM+ISE = 64\% a 24m; DTF solo 3\%
+  \vspace{0.15cm}
+  \item \textbf{Capacidad predictiva VARX:} Domina univariados en h$\geq$3m (+47\%-+66\%)
+  \vspace{0.15cm}
+  \item \textbf{Pronóstico 2026:} Compatible con meta bajo escenario base
+\end{enumerate}
+\end{frame}
+
+% Slide 14: Policy Implications
+\begin{frame}{10. Implicaciones para Política Monetaria}
+\normalsize
+\vspace{0.3cm}
+\textbf{Recomendaciones para Banco de la República}
+
+\begin{itemize}
+  \item \textbf{Paciencia:} Efectos de tasas tardan 5-7 meses; ventana larga necesaria
+  \vspace{0.15cm}
+  \item \textbf{Monitoreo TRM/ISE:} Canales cambiario y real dominan inflación (64\%)
+  \vspace{0.15cm}
+  \item \textbf{Expectativas ancladas:} Persistencia propia limita 34\% de var. inflación a 24m
+  \vspace{0.15cm}
+  \item \textbf{Shocks externos:} Vigilancia de inflación US y petróleo crítica para pronósticos
+  \vspace{0.15cm}
+  \item \textbf{Horizonte mediano:} Modelos VARX útiles para pronósticos operacionales (h$\geq$3m)
+\end{itemize}
+
+\vspace{0.4cm}
+\textbf{Limitaciones y extensiones futuras}
+\begin{itemize}
+  \item ARIMA competitivo en muy corto plazo (h=1m)
+  \item Heterocedasticidad condicional sugiere modelos GARCH/VARMA-GARCH
+  \item Series estructurales: quiebres detectados podrían analizarse con VAR en ventanas
+\end{itemize}
+\end{frame}
+
+\end{document}

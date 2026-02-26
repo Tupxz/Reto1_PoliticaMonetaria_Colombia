@@ -1161,7 +1161,7 @@ Se adopta la especificación con quiebre en intercepto y tendencia (model = “b
 #### 4.3.5 Tabla comparativa
 
 | **Serie (variable)** | **Transformación usada en el modelo** | **PP (p-value)** | **KPSS nivel (p-value)** | **KPSS tendencia (p-value)** | **ZA (t-stat)** | **ZA (break, posición)** | **Lectura preliminar (con base en p-values y críticos)** |
-|---------|---------|---------|---------|---------|---------|---------|---------|
+|----|----|----|----|----|----|----|----|
 | Inflación Colombia (`inflacion_anual`) | $\Delta_{12}\log(IPC)\times 100$ | 0.6953 | 0.01 | 0.01 | -3.5436 | 192 | PP **no** rechaza raíz unitaria; KPSS **rechaza** estacionariedad; ZA **no** rechaza a 10%/5% |
 | TRM (`TRM_log`) | $\Delta_{12}\log(TRM)\times 100$ | 0.04462 | 0.0715 | 0.01 | -3.9264 | 103 | PP **rechaza** raíz unitaria (5%); KPSS nivel **no** rechaza (débil); ZA **no** rechaza |
 | DTF (`DTF_nivel`) | Nivel (%) | 0.8074 | 0.01095 | 0.01 | -4.9422 | 193 | PP **no** rechaza raíz unitaria; KPSS **rechaza** estacionariedad; ZA **rechaza al 10%** (porque -4.94 \< -4.82) pero **no al 5%** |
@@ -1200,7 +1200,7 @@ Por su parte, la inflación de Colombia, la inflación de Estados Unidos y la TR
 En consecuencia, se adopta una especificación del modelo en tasas de crecimiento (Δ12 log) para las variables macroeconómicas, mientras que la tasa DTF se mantiene en nivel, dado su carácter de variable de política monetaria. Esta decisión permite garantizar la estabilidad del sistema dinámico y evitar problemas de regresión espuria en la estimación del VARX.
 
 | **Variable** | **Transformación final** | **Evidencia de estacionariedad** | **Decisión para VARX** |
-|------------------|------------------|------------------|------------------|
+|----|----|----|----|
 | Inflación COL | Δ12 log | Mixta (ADF/PP/KPSS) con alta persistencia | Endógena en tasas |
 | ISE (DAE) | Δ12 log | Estacionaria (PP y KPSS consistentes) | Endógena en tasas |
 | TRM | Δ12 log | Persistencia moderada, evidencia mixta | Endógena en tasas |
