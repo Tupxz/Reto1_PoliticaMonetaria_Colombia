@@ -28,3 +28,5 @@ VAR_files/
 *VAR_files*/
 **/VAR_files/
 **/*VAR_files*/
+/.quarto/
+**/*.quarto_ipynb
