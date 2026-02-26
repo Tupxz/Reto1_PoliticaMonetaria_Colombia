@@ -36,8 +36,6 @@ editor_options:
 
 <br><br><br>
 
-## 1. Librerias
-
 ```{r}
 #| label: Librerias
 #| message: false
@@ -78,25 +76,44 @@ if(length(not_installed)) {
 
 # Carga todos los paquetes
 invisible(lapply(packages, library, character.only = TRUE))
+
+
+setwd("../")
 ```
 
-Para el desarrollo del análisis econométrico se emplean diversas librerías especializadas en manipulación de datos, series de tiempo y estimación de modelos dinámicos multivariados. A continuación, se describe el propósito de cada grupo de paquetes:
+## 0. Introducción
 
-Las librerías **`tidyverse`** y **`ggplot2`** se utilizan para la manipulación, limpieza y visualización de datos. Estas herramientas permiten estructurar bases de datos de manera eficiente, transformar variables y generar gráficos descriptivos claros que facilitan el análisis exploratorio previo a la modelación.
+La estabilidad de precios constituye uno de los objetivos centrales de la política macroeconómica, en la medida en que una inflación persistente deteriora el poder adquisitivo, incrementa la incertidumbre y distorsiona las decisiones de consumo, ahorro e inversión. En Colombia, este objetivo se materializa a través del esquema de metas de inflación del Banco de la República, bajo el cual la tasa de interés actúa como principal instrumento de política monetaria. En teoría, un aumento de la tasa debería moderar la demanda agregada y contener las presiones inflacionarias; sin embargo, la efectividad de este mecanismo depende de los rezagos y de las condiciones macroeconómicas en las que opera.
 
-El paquete **`lubridate`** se emplea para el manejo adecuado de fechas y formatos temporales, lo cual es fundamental en el tratamiento de series de tiempo macroeconómicas.
+En los últimos años, la economía colombiana ha enfrentado episodios de inflación elevada asociados a choques externos, presiones cambiarias y factores internos de demanda. En respuesta, el Banco de la República adoptó una postura monetaria contractiva, elevando de manera sostenida las tasas de interés y encareciendo el costo del crédito. No obstante, surge una pregunta empírica fundamental: **¿en qué medida estas decisiones han contribuido efectivamente a reducir la inflación?**
 
-Para la estimación y análisis del modelo VAR se utilizan principalmente **`vars`**, que permite estimar modelos autorregresivos vectoriales, generar funciones impulso-respuesta (IRF) y descomposiciones de varianza, y **`urca`** y **`tseries`**, que se emplean para realizar pruebas de raíz unitaria (ADF, Phillips-Perron) y cointegración, garantizando el tratamiento adecuado de la estacionariedad.
+Con el fin de abordar esta pregunta, este trabajo analiza la dinámica inflacionaria de Colombia mediante un modelo autorregresivo vectorial con variables exógenas (VARX), utilizando información mensual de inflación, tasa de interés, tipo de cambio y actividad económica, junto con factores externos como la inflación de Estados Unidos y el precio internacional del petróleo. Este enfoque permite estudiar de manera conjunta los canales monetario, cambiario, real y externo que inciden sobre la inflación, así como evaluar su capacidad predictiva a distintos horizontes.
 
-La librería **`dynlm`** se utiliza para estimar modelos dinámicos mediante mínimos cuadrados incorporando rezagos explícitos, mientras que **`lmtest`** y **`sandwich`** permiten realizar pruebas de diagnóstico (autocorrelación, heterocedasticidad, estabilidad) y obtener errores estándar robustos.
+En este marco, el objetivo del trabajo es **examinar la transmisión de la política monetaria y evaluar el desempeño de un modelo VARX para explicar y pronosticar la inflación en Colombia**. De este modo, se busca aportar evidencia empírica sobre la dinámica reciente de los precios y sobre la utilidad de un enfoque multivariado para el análisis macroeconómico aplicado.
 
-El paquete **`strucchange`** se emplea para analizar posibles cambios estructurales en las series, elemento particularmente relevante en el estudio de política monetaria y choques macroeconómicos.
+## 1. Revisón de literatura
 
-Para análisis y modelación complementaria de series de tiempo se utilizan **`forecast`**, **`fpp3`** y **`zoo`**, que facilitan el manejo de estructuras temporales, pronósticos y transformaciones específicas de datos indexados en el tiempo.
+La inflación es un fenómeno multidimensional que no responde a una única causa, sino a la interacción de factores monetarios, reales, financieros y externos. Por esta razón, la literatura macroeconómica contemporánea ha destacado la necesidad de incorporar distintos canales de transmisión en el análisis inflacionario, especialmente en economías abiertas donde los choques internacionales y cambiarios desempeñan un papel relevante. En este contexto, la revisión de la literatura permite justificar la inclusión de variables como la tasa de cambio, la tasa de interés, la actividad económica y la inflación externa dentro de un marco empírico integrado.
 
-Finalmente, **`readxl`** y **`openxlsx`** se emplean para la importación y exportación de datos en formato Excel, asegurando reproducibilidad y compatibilidad con fuentes externas.
+En primer lugar, la tasa de cambio ocupa un lugar central a través del mecanismo de *exchange rate pass-through*. En economías abiertas, una depreciación encarece los bienes importados y este efecto puede trasladarse gradualmente a los precios internos. Pham (2023) encuentra evidencia robusta de que los choques cambiarios se transmiten de manera significativa a la inflación, incluso bajo distintos regímenes de política monetaria.
 
-En conjunto, estas librerías permiten construir un entorno reproducible y robusto para el análisis de política monetaria mediante técnicas modernas de econometría de series de tiempo.
+En segundo lugar, las tasas de interés, como principal instrumento de política monetaria, influyen sobre el consumo y la inversión a través del canal de demanda agregada. Stock y Watson (2003) muestran que las tasas de corto plazo contienen información predictiva relevante para la inflación y el crecimiento, lo que respalda su inclusión en modelos de pronóstico macroeconómico.
+
+En tercer lugar, la actividad económica constituye un determinante fundamental de la dinámica de precios dentro del marco de la curva de Phillips moderna. Galí y Gertler (1999) demuestran que la inflación responde de manera significativa a la brecha del producto, lo que justifica la incorporación de indicadores de actividad como aproximación al ciclo económico.
+
+Asimismo, la inflación presenta un componente global asociado a la integración comercial y financiera. El Bank for International Settlements (2016) documenta que factores internacionales explican una parte importante de la variación inflacionaria, lo que da sustento a la inclusión de variables como la inflación de Estados Unidos y los precios internacionales del petróleo en ejercicios aplicados a economías pequeñas y abiertas.
+
+Finalmente, la literatura reciente respalda el uso de modelos VAR para analizar y predecir la inflación cuando las relaciones entre variables son simultáneas y evolucionan en el tiempo. Bianchi y Civelli (2015) muestran que un VAR con parámetros variables puede capturar adecuadamente mecanismos de transmisión macroeconómica y cambios en la dinámica del sistema. En conjunto, esta evidencia respalda la incorporación de los canales monetario, cambiario, real y externo en un marco integrado que permita comprender y pronosticar de forma más consistente el comportamiento inflacionario en Colombia.
+
+### 1.1 **Consideraciones metodológicas derivadas de la literatura**
+
+La literatura sobre inflación mensual muestra que su dinámica suele caracterizarse por **persistencia**, **autocorrelación** y, en muchos casos, **patrones estacionales** que no permanecen constantes en el tiempo. Esto implica que, aun después de transformaciones como las variaciones interanuales, pueden subsistir componentes dinámicos y estacionales que deben ser considerados en la especificación econométrica. En este sentido, trabajos como los de Osborn y Sensier (2004) documentan la relevancia de la persistencia y de la estacionalidad en inflación mensual, lo que respalda el tratamiento cuidadoso de estas características antes de la estimación del modelo. 
+
+Asimismo, la evidencia metodológica sobre modelos VAR señala que, en muestras finitas y en presencia de alta persistencia, la inferencia basada en funciones impulso–respuesta puede resultar sensible a supuestos asintóticos estrictos. Por esta razón, el uso de procedimientos **bootstrap** constituye una estrategia apropiada para construir intervalos de confianza más robustos. Sims y Zha (1999) destacan la importancia de emplear bandas de error adecuadas en funciones impulso–respuesta, mientras que Kilian (2000) muestra que los intervalos bootstrap pueden mejorar la precisión de la inferencia en modelos autorregresivos y VAR con muestras finitas. 
+
+Por otra parte, la incorporación de la tasa de interés en **nivel** puede justificarse no solo por criterios estadísticos, sino también por razones económicas. En modelos orientados al análisis de transmisión monetaria, el nivel de la tasa resume directamente la postura de política y el costo del dinero en la economía; en consecuencia, diferenciarla podría debilitar su interpretación económica. En esta línea, Bagliano y Favero (1998) evalúan modelos VAR para estudiar la transmisión de la política monetaria y subrayan el papel central de las tasas de interés dentro del sistema dinámico. 
+
+En conjunto, esta literatura respalda una estrategia econométrica que combine transformaciones apropiadas de las series, atención a la estacionalidad y persistencia, y métodos de inferencia robustos para el análisis dinámico. Bajo este enfoque, decisiones como mantener la tasa de interés en nivel, emplear bootstrap en las funciones impulso–respuesta y reconocer la presencia de componentes estacionales residuales no constituyen ajustes ad hoc, sino elecciones metodológicas consistentes con la evidencia empírica disponible. 
 
 ## 2. Limpieza de bases de datos
 
@@ -149,6 +166,8 @@ rm(TRM_raw)
 La Tasa Representativa del Mercado (TRM) se incorpora en el modelo como una variable fundamental para capturar los efectos del canal cambiario sobre la dinámica inflacionaria en Colombia. Dado que la economía colombiana es abierta y presenta una alta dependencia de bienes importados, las variaciones en el tipo de cambio afectan directamente los precios internos a través del mecanismo de pass-through cambiario.
 
 En particular, una depreciación del peso colombiano encarece los bienes importados y los insumos intermedios, lo cual puede trasladarse a los precios al consumidor. Por esta razón, la TRM constituye un determinante relevante dentro del sistema VAR, permitiendo evaluar la transmisión de choques externos hacia la inflación doméstica.
+
+> La TRM se obtiene del Banco de la República, a partir de la serie oficial de Tasa Representativa del Mercado. *(Banco de la República, s. f.)*
 
 #### 2.1.1 Transformación de la variable
 
@@ -237,6 +256,8 @@ Esta especificación se adopta por tres razones principales:
 
 En consecuencia, la variable `inflacion_anual` representa la tasa de inflación anual expresada en porcentaje, coherente con la transformación aplicada a la TRM y con el marco metodológico del modelo, aunque para el caso de Colombia la transformación de esta variable no necesariamente la vuelve estacionaria y posiblemente haya que diferenciarla de nuevo.
 
+> El IPC y el ISE se obtienen del DANE, que publica las series oficiales mensuales para Colombia. *(DANE, s. f.)*
+
 ### 2.3 Tasa de Interés DTF (CDT a 90 días)
 
 ```{r}
@@ -294,6 +315,8 @@ Esta elección se fundamenta en tres consideraciones:
 3.  **Interpretación dinámica:** Incluir la DTF en niveles facilita la lectura de las funciones impulso–respuesta, permitiendo analizar cómo un aumento de un punto porcentual en la tasa afecta la inflación.
 
 En consecuencia, la variable `DTF_nivel` representa la tasa de interés promedio mensual de los CDT a 90 días, utilizada como indicador de las condiciones monetarias internas.
+
+> La DTF (CDT a 90 días) se toma de las series estadísticas del Banco de la República. *(Banco de la República, s. f.)*
 
 ### 2.4 Indicador de Seguimiento a la Economía (ISE)
 
@@ -369,6 +392,8 @@ La inclusión de esta variable se fundamenta en que Colombia es una economía pe
 
 Esta variable se incorpora como exógena en el modelo VAR bajo el supuesto de que la economía colombiana no influye en la determinación de la inflación estadounidense.
 
+> La inflación de Estados Unidos se construye a partir del CPIAUCSL (CPI-U, SA) disponible en FRED. *(Federal Reserve Bank of St. Louis, s. f.)*
+
 ### 2.6 Variable Exógena: Precio Internacional del Petróleo (Brent)
 
 ```{r}
@@ -417,6 +442,8 @@ Esta transformación permite interpretar la variable como la tasa de crecimiento
 Dado que el cálculo de la variación interanual requiere 12 observaciones previas, la serie transformada inicia en enero de 2006, utilizando como base el valor correspondiente a enero de 2005. Esta decisión garantiza consistencia temporal en la construcción de la variable y alineación con el periodo de análisis del modelo.\
 \
 **Nota**: para este trabajo se unificaron todas las variables en una misma base datos que empieza desde el 2006-1 hasta 2026-1 (solo algunas variables pero conssrvando NA's para no perder datos reales)
+
+> El Brent se toma de la serie DCOILBRENTEU disponible en FRED. *(Federal Reserve Bank of St. Louis, s. f.)*
 
 ```{r}
 #| include: false
@@ -2311,3 +2338,39 @@ Finalmente, los resultados deben interpretarse con cautela. El modelo captura co
 -   Pronóstico condicional: el ejercicio depende de la trayectoria proyectada de exógenas (Forecast-X).
 -   Diagnóstico residual: heterocedasticidad/no normalidad pueden afectar inferencia estándar; se prioriza interpretación económica e incertidumbre por bootstrap en IRFs.
 -   Posibles extensiones: SVARX (identificación), VAR-GARCH, escenarios alternativos y validación adicional con ventanas móviles.
+
+## 7. Referencias
+
+Bagliano, F. C., & Favero, C. A. (1998). Measuring monetary policy with VAR models: An evaluation. *European Economic Review, 42*(6), 1069–1112. https://doi.org/10.1016/S0014-2921(98)00005-1
+
+Bank for International Settlements. (2016). *Global inflation dynamics and inflation forecasting*. BIS Working Papers No. 582.
+
+Bianchi, F., & Civelli, A. (2015). Globalization and inflation: Evidence from a time-varying VAR. *Review of Economic Dynamics, 18*(2), 406–433. https://doi.org/10.1016/j.red.2014.07.002
+
+Galí, J., & Gertler, M. (1999). Inflation dynamics: A structural econometric analysis. *Journal of Monetary Economics, 44*(2), 195–222. https://doi.org/10.1016/S0304-3932(99)00023-9
+
+Kilian, L. (2000). Impulse response analysis in VAR models with unknown lag order. *Economics Letters, 69*(2), 161–167. https://doi.org/10.1016/S0165-1765(00)00315-3
+
+Lütkepohl, H. (2005). *New introduction to multiple time series analysis*. Springer.
+
+Osborn, D. R., & Sensier, M. (2004). Modelling UK inflation: Persistence, seasonality and monetary policy. *Manchester School Discussion Paper*.
+
+Pham, T. A. T. (2023). Exchange rate pass-through and inflation across inflation targeting and non-targeting economies. *Journal of International Money and Finance*. https://doi.org/10.1016/j.jimonfin.2020.102265
+
+Sims, C. A. (1980). Macroeconomics and reality. *Econometrica, 48*(1), 1–48. https://doi.org/10.2307/1912017
+
+Sims, C. A., & Zha, T. (1999). Error bands for impulse responses. *Econometrica, 67*(5), 1113–1155. https://doi.org/10.1111/1468-0262.00071
+
+Stock, J. H., & Watson, M. W. (2003). Forecasting output and inflation: The role of asset prices. *Journal of Economic Literature, 41*(3), 788–829. https://doi.org/10.1257/002205103322436197
+
+Departamento Administrativo Nacional de Estadística (DANE). (s. f.). *Índice de Precios al Consumidor (IPC): Series históricas mensuales* \[Conjunto de datos\]. DANE.
+
+Departamento Administrativo Nacional de Estadística (DANE). (s. f.). *Índice de Seguimiento a la Economía (ISE): Series históricas mensuales* \[Conjunto de datos\]. DANE.
+
+Banco de la República. (s. f.). *Tasa Representativa del Mercado (TRM): Serie histórica* \[Conjunto de datos\]. Banco de la República.
+
+Banco de la República. (s. f.). *DTF (promedio mensual) / CDT a 90 días: Serie histórica* \[Conjunto de datos\]. Banco de la República.
+
+Federal Reserve Bank of St. Louis. (s. f.). *Consumer Price Index for All Urban Consumers: All Items, Seasonally Adjusted (CPIAUCSL)* \[Data set\]. FRED.
+
+Federal Reserve Bank of St. Louis. (s. f.). *Crude Oil Prices: Brent—Europe (DCOILBRENTEU)* \[Data set\]. FRED.

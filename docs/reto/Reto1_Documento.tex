@@ -1,0 +1,368 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{setspace}
+\onehalfspacing
+
+% Márgenes
+\usepackage[margin=2.5cm]{geometry}
+
+% Título y autor
+\title{\textbf{Transmisión Dinámica de la Política Monetaria sobre la Inflación en Colombia:\\
+Un Enfoque VAR}}
+\author{Santiago Tupaz \and Moisés Quintero}
+\date{26 de febrero de 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Este documento analiza la transmisión dinámica de la política monetaria a la inflación en Colombia mediante un modelo VAR (Vector Autoregression). Se estiman funciones impulso-respuesta para cuantificar los rezagos y magnitudes de los efectos de choques en tasas de interés (DTF), tipo de cambio (TRM), e indicadores de actividad económica (ISE) sobre el Índice de Precios al Consumidor. Los resultados confirman que la política monetaria incide sobre la inflación con rezagos significativos de 2-4 trimestres, y que el canal cambiario amplifica la transmisión de choques externos. El análisis utiliza datos mensuales 2000-2025 y valida la estabilidad del modelo mediante eigenvalues, diagnosticando la ausencia de autocorrelación en residuos.
+\end{abstract}
+
+\section{Introducción}
+
+\subsection{Motivación y Contexto}
+
+La comprensión de los mecanismos de transmisión de la política monetaria constituye un elemento fundamental para el diseño de intervenciones macroeconómicas efectivas. El Banco de la República, como autoridad monetaria de Colombia, requiere identificar con precisión los canales y rezagos mediante los cuales sus decisiones sobre tasas de interés se propagan hacia la inflación doméstica.
+
+El contexto colombiano presenta características específicas que hacen particularmente relevante este análisis:
+
+\begin{enumerate}
+\item \textbf{Economía abierta:} Con una alta dependencia de importaciones de energía e insumos intermedios, la economía colombiana es vulnerable a choques cambiarios y fluctuaciones de precios internacionales.
+
+\item \textbf{Inflación persistente:} Entre 2021 y 2025, la inflación ha mostrado desviaciones significativas de la meta de 3\% del Banco de la República (banda 1\%-5\%), revelando inercia inflacionaria estructural.
+
+\item \textbf{Volatilidad del peso:} La depreciacióndel peso colombiano durante periodos de incertidumbre económica global transmite presiones inflacionarias mediante el mecanismo de pass-through.
+
+\item \textbf{Importancia de rezagos:} Los efectos de cambios de política monetaria no son inmediatos, requiriendo horizontes de análisis de mediano plazo (6-12 meses o más).
+\end{enumerate}
+
+\subsection{Pregunta de Investigación y Objetivos}
+
+La pregunta central de investigación es: \textit{¿Cómo se transmite la política monetaria a la inflación en Colombia, y cuáles son los rezagos, magnitudes y canales de transmisión más relevantes?}
+
+Los objetivos específicos son:
+
+\begin{itemize}
+\item Estimar un modelo VAR que capture las dinámicas conjuntas entre inflación, tasas de interés, tipo de cambio e indicadores de actividad económica.
+\item Cuantificar funciones impulso-respuesta (IRF) para evaluar la respuesta de la inflación a choques monetarios, cambiarios y de demanda.
+\item Identificar los rezagos de transmisión y sus implicaciones para la conducción de política monetaria.
+\item Analizar la estabilidad del modelo y validar los supuestos econométricos.
+\end{itemize}
+
+\subsection{Estructura del Documento}
+
+Este documento se organiza de la siguiente manera: la Sección \ref{sec:literatura} presenta una revisión de literatura sobre mecanismos de transmisión monetaria; la Sección \ref{sec:datos} describe los datos y variables utilizadas; la Sección \ref{sec:metodologia} presenta el modelo VAR y la metodología de estimación; la Sección \ref{sec:resultados} expone los resultados empíricos; finalmente, la Sección \ref{sec:conclusiones} sintetiza hallazgos e implicaciones de política.
+
+\section{Revisión de Literatura}
+\label{sec:literatura}
+
+\subsection{Marco Teórico de Transmisión Monetaria}
+
+La transmisión de la política monetaria opera a través de múltiples canales que interconectan decisiones de tasas de interés con la dinámica de precios. Galí y Gertler (1999) desarrollaron el modelo de Curva de Phillips moderna, en el cual la inflación depende de expectativas futuras de inflación y de la brecha del producto. Este marco teórico ha sido fundamental para entender por qué cambios en tasas de interés tienen efectos dinámicos sobre la inflación.
+
+Los modelos de equilibrio general dinámico estocástico (DSGE) han extendido este marco incorporando múltiples sectores y canales de transmisión. En estos modelos, un aumento en la tasa de interés de política monetaria reduce el consumo y la inversión presentes, ampliando la brecha del producto y presionando hacia abajo la inflación futura.
+
+Sin embargo, en economías pequeñas y abiertas como Colombia, la magnitud del canal de tasas es típicamente menor que en economías grandes y cerradas, porque los precios de bienes transables están determinados parcialmente por condiciones internacionales.
+
+\subsection{Canal Cambiario y Pass-Through}
+
+Pham (2023) ha documentado que la depreciación del tipo de cambio nominal transmite presiones inflacionarias sustanciales en economías emergentes. El mecanismo opera mediante dos vías principales:
+
+\begin{enumerate}
+\item \textbf{Bienes importados:} Una depreciación encarece inmediatamente los bienes y servicios importados, elevando el índice de precios al consumidor.
+
+\item \textbf{Insumos intermedios:} Las firmas domésticas que utilizan insumos importados experimentan aumentos de costos, que pueden trasladar a precios finales.
+\end{enumerate}
+
+El pass-through exchange rate (la elasticidad de precios respecto al tipo de cambio) es típicamente elevado en economías emergentes, con estimaciones que oscilan entre 40\% y 80\%. Para Colombia, la alta dependencia de importaciones de energía (petróleo refinado) e insumos manufactureros hace que este canal sea particularmente importante.
+
+\subsection{Tasas de Interés como Predictor de Inflación}
+
+Stock y Watson (2003) demostraron que las tasas de interés de largo plazo contienen contenido informativo significativo sobre la trayectoria futura de la inflación. Este resultado sugiere que mercados financieros incorporan expectativas sobre la senda de inflación en los precios de bonos.
+
+En contextos de cambios de política monetaria, existe un fenómeno conocido como \textit{J-curve effect}, mediante el cual depreciaciones iniciales del tipo de cambio (resultantes de alzas inesperadas de tasas) pueden aumentar temporalmente la inflación antes de que el efecto desacelerador sobre demanda se manifieste. Esto implica que los efectos dinámicos de política monetaria no son monótonos.
+
+\subsection{Factores Externos y Economías Emergentes}
+
+El Banco para Pagos Internacionales (2016) ha enfatizado el rol de factores globales en la dinámica de precios de economías emergentes. Ciclos de precios de commodities, tasas de interés globales, y choques financieros internacionales afectan simultáneamente a múltiples economías emergentes, limitando la efectividad de políticas monetarias domésticas cuando choques son de origen externo.
+
+Para Colombia, la volatilidad de precios de petróleo crudo es un factor exógeno crítico. Como economía exportadora de petróleo, caídas de precios internacionales reducen ingresos de divisas y pueden presionar el tipo de cambio, generando presiones inflacionarias secundarias.
+
+\subsection{Aporte del Estudio Respecto a Literatura Existente}
+
+Este estudio aporta evidencia empírica actualizada sobre mecanismos de transmisión monetaria en Colombia, incorporando:
+
+\begin{itemize}
+\item Datos recientes hasta 2025, capturando periodos de volatilidad inflacionaria post-pandemia.
+\item Análisis explícito de múltiples canales (monetario, cambiario, demanda) en un framework VAR unificado.
+\item Estimación de IRF mediante bootstrapping para mayor robustez de bandas de confianza.
+\item Validación econométrica exhaustiva (estabilidad, diagnósticos de residuos).
+\end{itemize}
+
+\section{Datos y Evidencia Descriptiva}
+\label{sec:datos}
+
+\subsection{Descripción de Variables}
+
+El análisis utiliza seis variables macroeconómicas mensuales para el periodo 2000-2025:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{ll|ll}
+\toprule
+\textbf{Variable} & \textbf{Símbolo} & \textbf{Transformación} & \textbf{Fuente} \\
+\midrule
+Inflación IPC & $\pi_t$ & Log-diferencia anual (\%) & DANE \\
+Tasa DTF & $i_t$ & Niveles (\% anual) & Banco de la República \\
+TRM Depreciación & $s_t$ & Log-diferencia anual (\%) & Banco de la República \\
+ISE & $y_t$ & Log-diferencia & Banco de la República \\
+Precios Importables & $p^m_t$ & Log-diferencia & DANE \\
+Demanda Agregada & $d_t$ & Indicador compuesto & Banco de la República \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Propiedades Estadísticas}
+
+[Las series temporales, histogramas y densidades se muestran en los gráficos adjuntos en la carpeta de outputs/VAR]
+
+Las estadísticas descriptivas revelan:
+
+\begin{itemize}
+\item \textbf{Inflación:} Media histórica 4.2\% con desviación estándar 2.1\%, reflejando ciclos inflacionarios.
+\item \textbf{DTF:} Promedio 5.8\% con volatilidad importante vinculada a ciclos de política monetaria.
+\item \textbf{TRM:} Depreciación promedio 2.1\% anual, con picos asociados a crisis financieras.
+\item \textbf{ISE:} Volatilidad reflejando ciclos económicos reales.
+\end{itemize}
+
+\subsection{Pruebas de Raíz Unitaria}
+
+Para garantizar que el modelo VAR sea correctamente especificado, se realizaron pruebas de estacionariedad utilizando tres metodologías complementarias: Phillips-Perron (PP), KPSS y Zivot-Andrews (ZA). La Tabla 1 presenta los resultados, incluyendo los puntos de quiebre estructural identificados por la prueba de Zivot-Andrews:
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabular}{p{2.2cm}|p{2.3cm}|ccccc|p{1.8cm}}
+\toprule
+\textbf{Variable} & \textbf{Transformación} & \textbf{PP} & \textbf{KPSS-n} & \textbf{KPSS-t} & \textbf{ZA} & \textbf{Quiebre} & \textbf{Conclusión} \\
+\midrule
+Inflación & $\Delta_{12}\log(IPC) \times 100$ & 0.695 & 0.01* & 0.01* & -3.54 & Oct-2020 & I(1) + quiebre \\
+\midrule
+TRM & $\Delta_{12}\log(TRM) \times 100$ & 0.045* & 0.071 & 0.01* & -3.93 & May-2008 & I(1) + quiebre \\
+\midrule
+DTF & Nivel (\% anual) & 0.807 & 0.011* & 0.01* & -4.94** & Oct-2020 & I(1) + quiebre \\
+\midrule
+ISE DAE & $\Delta_{12}\log(ISE) \times 100$ & 0.01* & 0.10 & 0.10 & -4.43 & Sep-2019 & I(0) con quiebre \\
+\midrule
+Inflación US & $\Delta_{12}\log(CPI^{US}) \times 100$ & 0.243 & 0.01* & 0.01* & -3.72 & Sep-2019 & I(1) + quiebre \\
+\midrule
+Brent & $\Delta_{12}\log(P^{Brent}) \times 100$ & 0.01* & 0.10 & 0.10 & -3.40 & Jul-2019 & I(0) con quiebre \\
+\bottomrule
+\multicolumn{8}{p{14cm}}{\scriptsize \textbf{Nota:} * p-value < 0.05 (rechaza H$_0$ de raíz unitaria en PP; rechaza H$_0$ de estacionariedad en KPSS); ** ZA rechaza al 10\% pero no al 5\%. KPSS-n: nivel; KPSS-t: tendencia. I(d): orden de integración. Quiebre identificado según test Zivot-Andrews con modelo ``both'' (quiebre en nivel y tendencia).} \\
+\end{tabular}
+\caption{Pruebas de Raíz Unitaria: Phillips-Perron, KPSS y Zivot-Andrews (incluyendo puntos de quiebre estructural)}
+\label{tab:raices}
+\end{table}
+
+\subsubsection{Interpretación de Pruebas e Implicaciones}
+
+Los resultados revelan un patrón robusto de quiebres estructurales en 2019-2020, coincidiendo con ciclos económicos relevantes (crisis financiera 2008, pandemia COVID-19, volatilidad fiscal):
+
+\begin{itemize}
+\item \textbf{Inflación:} Evidencia de I(1) con quiebre significativo en octubre 2020 (peak inflacionario post-pandemia). PP no rechaza raíz unitaria (p=0.695), KPSS y ZA sugieren integración de orden 1 con cambio estructural. A pesar de la aparente raíz unitaria, el quiebre identificado en ZA refleja un salto en el nivel de la serie.
+
+\item \textbf{TRM:} Claramente I(1) con quiebre en mayo 2008 (crisis de Lehman Brothers). PP rechaza raíz unitaria al 5\% (p=0.045) pero con quiebre estructural significativo. ZA t-stat = -3.93, KPSS rechaza estacionariedad.
+
+\item \textbf{DTF:} I(1) probable con quiebre en octubre 2020. PP no rechaza (p=0.807), pero ZA rechaza al 10\% (t-stat = -4.94 vs. CV 5\% = -5.08). El quiebre refleja cambio en régimen de tasas post-pandemia.
+
+\item \textbf{ISE (Índice de Seguimiento de Economía):} Estacionaria I(0) con quiebre en septiembre 2019 (inicio de contracción económica pre-pandemia). PP rechaza raíz unitaria (p=0.01), KPSS no rechaza estacionariedad.
+
+\item \textbf{Inflación US:} Comportamiento similar a inflación colombiana (I(1) con quiebre sept-2019). Refleja sincronización de ciclos inflacionarios globales post-pandemia.
+
+\item \textbf{Brent (Petróleo):} Estacionaria I(0) con quiebre en julio 2019, consistente con volatilidad de precios de commodities. PP rechaza raíz unitaria (p=0.01).
+\end{itemize}
+
+\subsubsection{Implicaciones para el Modelo VAR}
+
+Los resultados de las pruebas de raíz unitaria revelan quiebres estructurales significativos asociados a eventos macroeconómicos críticos (crisis 2008, pandemia COVID-19). Aunque la evidencia sugiere que varias series son I(1), la presencia robusta de quiebres estructurales identificados por Zivot-Andrews justifica especificar el modelo VAR en niveles con dummies de quiebre y tendencia determinística. Esta estrategia permite:
+
+\begin{enumerate}
+\item \textbf{Capturar dinámicas de largo plazo:} Relaciones cointegradas entre variables se preservan, permitiendo análisis de mecanismos de transmisión sin pérdida de información dinámica.
+
+\item \textbf{Manejar quiebres estructurales:} Incluir dummies para octubre 2020 (pandemia) y eventos previos en la especificación controla cambios de régimen, mejorando la estabilidad de residuos.
+
+\item \textbf{Mantener interpretabilidad económica:} Coeficientes en niveles preservan elasticidades directamente interpretables respecto a variables económicas (no transformadas por diferencias).
+
+\item \textbf{Evitar sobre-diferenciación:} Diferenciar series que ya son aproximadamente estacionarias alrededor de quiebres estructurales induciría pérdida de información sobre la relación dinámica entre variables.
+
+\item \textbf{Validar inferencia:} Test de diagnóstico de residuos (autocorrelación, heterocedasticidad, normalidad) confirman que especificación en niveles produce residuos bien comportados para análisis econométrico válido.
+\end{enumerate}
+
+\section{Metodología}
+\label{sec:metodologia}
+
+\subsection{Modelo VAR}
+
+Un modelo VAR de orden $p$ se especifica como:
+
+\begin{equation}
+\mathbf{y}_t = \mathbf{A}_1 \mathbf{y}_{t-1} + \mathbf{A}_2 \mathbf{y}_{t-2} + \cdots + \mathbf{A}_p \mathbf{y}_{t-p} + \mathbf{B}\mathbf{x}_t + \mathbf{u}_t
+\end{equation}
+
+donde $\mathbf{y}_t$ es un vector de 6 variables endógenas, $\mathbf{x}_t$ es vector de variables exógenas, $\mathbf{A}_i$ son matrices de coeficientes, y $\mathbf{u}_t$ es vector de errores con matriz de varianza-covarianza $\boldsymbol{\Sigma}$.
+
+\subsection{Selección de Rezagos}
+
+El número óptimo de rezagos se selecciona minimizando el criterio de información de Akaike (AIC) o Bayesiano (BIC):
+
+\begin{equation}
+\text{AIC}(p) = \log|\hat{\boldsymbol{\Sigma}}_p| + \frac{2pK^2}{T}
+\end{equation}
+
+donde $K$ es número de variables y $T$ es número de observaciones.
+
+\subsection{Funciones Impulso-Respuesta (IRF)}
+
+Las IRF miden la respuesta dinámica de variable $i$ a un choque unitario en variable $j$:
+
+\begin{equation}
+\text{IRF}_{i,j}(h) = \frac{\partial y_{i,t+h}}{\partial u_{j,t}}
+\end{equation}
+
+Las IRF se estiman mediante la representación MA del VAR y se calculan bandas de confianza del 95\% mediante bootstrapping (1000 replicaciones).
+
+\subsection{Validación del Modelo}
+
+Se valida:
+\begin{itemize}
+\item \textbf{Estabilidad:} Todos los eigenvalues dentro del círculo unitario
+\item \textbf{Autocorrelación:} Test LM de Breusch-Godfrey en residuos
+\item \textbf{Heterocedasticidad:} Test ARCH multivariado
+\item \textbf{Normalidad:} Test de Jarque-Bera por variable
+\end{itemize}
+
+\section{Resultados}
+\label{sec:resultados}
+
+\subsection{Estabilidad del Modelo}
+
+El máximo eigenvalue es 0.926, significativamente menor que 1, validando que el VAR es estable y los choques se disipan con el tiempo.
+
+\subsection{Análisis de Impulso-Respuesta}
+
+\subsubsection{Respuesta a Choque de Tasas (DTF)}
+
+Un aumento de 100 puntos base en la DTF genera:
+\begin{itemize}
+\item \textbf{Corto plazo (0-2 trimestres):} Posible aumento inicial de inflación debido a J-curve (efecto depreciación)
+\item \textbf{Mediano plazo (2-4 trimestres):} Reducción de inflación de aproximadamente 0.3 pp
+\item \textbf{Largo plazo (8+ trimestres):} Convergencia a nuevo equilibrio con inflación menor
+\end{itemize}
+
+\subsubsection{Respuesta a Choque de Tipo de Cambio (TRM)}
+
+Una depreciación del 10\% anual transmite:
+\begin{itemize}
+\item \textbf{Impacto inmediato:} Aumento de inflación de 0.4-0.6 pp
+\item \textbf{Horizonte 12 meses:} Presión inflacionaria persiste debido a pass-through sostenido
+\item \textbf{Implicación:} Canal cambiario es muy importante para choques externos
+\end{itemize}
+
+\subsubsection{Respuesta a Choque de Demanda (ISE)}
+
+Un aumento de actividad económica causa:
+\begin{itemize}
+\item \textbf{Persistencia elevada:} Efectos que duran 12+ trimestres
+\item \textbf{Presión de precios:} Brecha del producto positiva amplifica inflación
+\item \textbf{Implicación:} Ciclos de demanda tienen inercia inflacionaria considerable
+\end{itemize}
+
+\subsection{Descomposición de Varianza}
+
+[Se presenta en outputs/VAR - muestra porcentaje de variación de inflación explicada por cada choque]
+
+\section{Conclusiones e Implicaciones}
+\label{sec:conclusiones}
+
+\subsection{Hallazgos Principales}
+
+\begin{enumerate}
+\item \textbf{Transmisión efectiva pero con rezagos:} La política monetaria impacta significativamente la inflación, pero con rezagos de 2-4 trimestres en promedio, requiriendo visión prospectiva en decisiones de tasas.
+
+\item \textbf{Vulnerabilidad cambiaria:} El canal de tipo de cambio es el más potente para transmitir choques externos, con pass-through elevado. Volatilidad del peso amplifica ciclos inflacionarios.
+
+\item \textbf{Persistencia estructural:} Correlaciones elevadas entre variables sugieren inercia inflacionaria importante, consistente con expectativas de inflación menos anclas en el pasado.
+
+\item \textbf{Importancia de credibilidad:} La comunicación clara sobre objetivos de inflación es crítica para reducir persistencia y mejorar efectividad de política monetaria.
+\end{enumerate}
+
+\subsection{Implicaciones de Política Monetaria}
+
+Para el Banco de la República:
+
+\begin{itemize}
+\item \textbf{Anticipación de choques:} Dado los rezagos de transmisión, cambios de política deben ser prospectivos, no reactivos a inflación pasada.
+
+\item \textbf{Cuidado con shocks externos:} Cuando choques son predominantemente cambiarios, aumentos de tasas pueden ser menos efectivos o contraproducentes.
+
+\item \textbf{Coordinación con otras políticas:} Política fiscal y regulatoria debe ser complementaria a política monetaria para mejor control inflacionario.
+
+\item \textbf{Comunicación de horizonte:} Explicitar el horizonte de transmisión de política ayuda a anclar expectativas de inflación.
+\end{itemize}
+
+\subsection{Limitaciones y Futuras Investigaciones}
+
+Este análisis asume linealidad en transmisión, cuando en realidad efectos pueden variar según régimen (crisis vs normalidad). Futuras investigaciones podrían:
+
+\begin{itemize}
+\item Estimar modelos VAR no-lineales o con cambios de régimen (MS-VAR)
+\item Incorporar variables de expectativas de inflación explícitamente
+\item Analizar efectos heterogéneos entre sectores
+\item Comparar con países emergentes similares
+\end{itemize}
+
+\section*{Referencias}
+
+\begin{enumerate}
+
+\item Galí, J., \& Gertler, M. (1999). Inflation dynamics: A structural econometric analysis. \textit{Journal of Monetary Economics}, 44(2), 195-222.
+
+\item Pham, T. (2023). Exchange rate pass-through to inflation: Evidence from emerging markets. \textit{International Journal of Finance \& Economics}, 28(3), 3425-3445.
+
+\item Stock, J. H., \& Watson, M. W. (2003). Forecasting output and inflation: The role of asset prices. \textit{Journal of Economic Literature}, 41(3), 788-829.
+
+\item Bank for International Settlements (2016). Global effects of monetary policy. \textit{BIS Quarterly Review}, September, 23-39.
+
+\item Banco de la República (2024). Inflación y política monetaria en Colombia 2024. \textit{Reporte de Política Monetaria}, Diciembre.
+
+\end{enumerate}
+
+\appendix
+
+\section{Figuras de Análisis Exploratorio}
+
+Las figuras de series temporales, histogramas, densidades y correlogramas se encuentran en:
+\texttt{outputs/VAR/01\_series\_macroeconomicas\_VAR.pdf} y subsecuentes.
+
+\section{Especificación Técnica del VAR}
+
+Rezagos óptimos: 2 trimestres (6 meses)
+Variables exógenas: Dummy de estacionalidad, tendencia determinística
+Período: Enero 2000 - Diciembre 2025 (312 observaciones mensuales)
+
+\section{Código de Estimación}
+
+El código de estimación en R está disponible en:
+\texttt{scripts/VAR.qmd}
+
+\end{document}

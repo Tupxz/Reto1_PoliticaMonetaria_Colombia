@@ -1,0 +1,21 @@
+\frametitle{Validación Econométrica: Raíz Unitaria}
+\scriptsize
+\vspace{-0.3cm}
+\begin{center}
+\begin{tabular}{lrrrcp{2.5cm}}
+\toprule
+\textbf{Variable} & \textbf{PP} & \textbf{KPSS} & \textbf{ZA} & \textbf{Quiebre} & \textbf{Conclusión} \\
+\midrule
+Inflación & 0.695 & 0.010* & -3.54 & Oct-20 & Persistencia + quiebre \\
+TRM & 0.045* & 0.071 & -3.93 & May-08 & Raíz unitaria + evento \\
+DTF & 0.807 & 0.011* & -4.94$^\dagger$ & Oct-20 & Estocástica + régimen \\
+ISE & 0.010* & 0.100 & -4.43 & Sep-19 & Estacionaria + quiebre \\
+Inflación US & 0.243 & 0.010* & -3.72 & Sep-19 & Persistencia + cambio \\
+Brent & 0.010* & 0.100 & -3.40 & Jul-19 & Estacionaria + volatilidad \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\vspace{0.2cm}
+\tiny
+\textit{Nota:} Phillips-Perron rechaza raíz unitaria (H$_0$: no estacionaria); KPSS rechaza estacionariedad (H$_0$: estacionaria). Zivot-Andrews (modelo ``both'') detecta cambios estructurales asociados a eventos económicos relevantes (crisis 2008, pandemia 2020). * p < 0.05. $\dagger$ Rechaza al 10\% pero no al 5\%. Series en log-diferencias mensuales interanuales aseguran residuos estacionarios sin diferenciación adicional.
