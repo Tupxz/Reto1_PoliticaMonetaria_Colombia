@@ -8,7 +8,7 @@ title: "Reto 1 – Haciendo Macroeconomía"
 **Curso:** Econometría II (EAFIT) – 2026-I
 
 ## Navegación
-- 📄 **Documentos
+- 📄 **Documentos**
 - [Informe web (HTML)](./docs/reto/VAR.html)
 - [Informe en PDF](./docs/reto/VAR.pdf)
 - [Slides en PDF](./docs/slides/slides.pdf)
