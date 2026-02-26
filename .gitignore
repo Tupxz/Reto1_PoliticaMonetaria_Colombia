@@ -23,3 +23,8 @@
 *.pyc
 __pycache__/
 *.venv
+## VAR outputs / figures
+VAR_files/
+*VAR_files*/
+**/VAR_files/
+**/*VAR_files*/
