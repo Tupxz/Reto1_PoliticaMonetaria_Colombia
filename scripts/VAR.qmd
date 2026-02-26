@@ -1806,10 +1806,9 @@ plot(irf_ise_inf, main = "IRF: shock en ISE → Inflación Colombia")
 
 ```{r}
 #| label: varx_fevd
-#| echo: true
+#| echo: false
 #| message: false
 #| warning: false
-#| include: false
 
 fevd_obj <- fevd(modelo_final, n.ahead = 24)
 
@@ -1872,10 +1871,9 @@ En un modelo VARX, los pronósticos del bloque endógeno dependen tanto de sus r
 
 ```{r}
 #| label: forecast_varx_realizedx
-#| echo: true
+#| echo: false
 #| message: false
 #| warning: false
-#| include: false
 
 
 
